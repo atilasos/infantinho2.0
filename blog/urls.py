@@ -8,7 +8,7 @@ urlpatterns = [
     path('', views.post_list, name='post_list'),
     
     # Novas URLs para gestão de posts
-    path('post/create/', views.post_create, name='post_create'),
+    path('post/new/', views.post_create, name='post_create'),
     path('my-posts/', views.my_posts, name='my_posts'),
     path('pending-posts/', views.pending_posts, name='pending_posts'),
     
@@ -21,10 +21,19 @@ urlpatterns = [
     path('post/<slug:slug>/comment/', views.add_comment, name='add_comment'),
     path('post/<slug:slug>/like/', views.like_post, name='like_post'),
     path('post/<slug:slug>/dislike/', views.dislike_post, name='dislike_post'),
+    path('post/<slug:slug>/delete/', views.post_delete, name='post_delete'),
     
     # Category views
-    path('category/<slug:slug>/', views.category_list, name='category_list'),
+    path('categories/', views.category_list, name='category_list'),
+    path('category/<slug:slug>/', views.category_detail, name='category_detail'),
     
     # Tag views
-    path('tag/<slug:slug>/', views.tag_list, name='tag_list'),
+    path('tags/', views.tag_list, name='tag_list'),
+    path('tag/<slug:slug>/', views.tag_detail, name='tag_detail'),
+    
+    # Author views
+    path('author/<str:username>/', views.author_posts, name='author_posts'),
+    
+    # Search
+    path('search/', views.search, name='search'),
 ] 

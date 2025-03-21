@@ -44,4 +44,29 @@ ENV/
 # Project specific
 *.bak
 *.tmp
-*.temp 
+*.temp
+
+# Database
+*.sqlite3
+*.db
+
+# Media files
+media/
+uploads/
+
+# Static files
+staticfiles/
+static/
+
+# Logs
+*.log
+logs/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db 

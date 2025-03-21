@@ -3,6 +3,9 @@ from typing import Dict, Optional, List
 from django.conf import settings
 from .models import ReadingQuestion, ContentModeration, ContentEnhancement, AISuggestions
 from .adapters import OllamaAdapter
+import os
+import re
+from django.utils.text import slugify
 
 class OllamaService:
     def __init__(self, base_url: str = "http://localhost:11434"):
@@ -237,8 +240,9 @@ class OllamaService:
 
 class AIService:
     def __init__(self):
-        self.adapter = OllamaAdapter(model_name="gemma3:latest")
-    
+        self.base_url = settings.OLLAMA_HOST
+        self.model = settings.OLLAMA_MODEL
+
     def enhance_content(self, content, target_age_group):
         """Melhora o conteúdo para ser mais adequado para crianças."""
         prompt = f"""Melhore o seguinte conteúdo para ser mais adequado para crianças de {target_age_group} anos.
@@ -383,31 +387,34 @@ class AIService:
             return {"error": str(e)}
     
     def generate_category(self, content):
-        """Gera uma categoria apropriada baseada no conteúdo."""
-        prompt = f"""Analise o seguinte conteúdo e sugira uma categoria apropriada.
-        A categoria deve ser uma das seguintes opções:
-        - Ciências
-        - Matemática
-        - História
-        - Geografia
-        - Literatura
-        - Artes
-        - Tecnologia
-        - Meio Ambiente
-        - Cidadania
-        - Saúde e Bem-estar
-        
-        Conteúdo:
-        {content}
-        
-        Responda apenas com o nome da categoria mais apropriada."""
-        
+        """Gera uma categoria para o post usando IA."""
         try:
-            result = self.adapter.generate(prompt)
-            if isinstance(result, dict) and "response" in result:
-                # Limpa caracteres especiais e espaços extras
-                category = result["response"].strip()
-                category = category.replace('{', '').replace('}', '').replace('"', '').strip()
+            # Limita o conteúdo para evitar tokens excessivos
+            content_preview = content[:1000]
+            
+            prompt = f"""Analisa o seguinte texto e sugere uma categoria apropriada em português. 
+            A categoria deve ser uma das seguintes: Ciências, Matemática, História, Geografia, 
+            Literatura, Artes, Tecnologia, Meio Ambiente, Cidadania, Saúde e Bem-estar.
+
+Texto:
+{content_preview}
+
+Categoria:"""
+
+            response = requests.post(
+                f"{self.base_url}/api/generate",
+                json={
+                    "model": self.model,
+                    "prompt": prompt,
+                    "stream": False
+                }
+            )
+            
+            if response.status_code == 200:
+                category = response.json()['response'].strip()
+                # Remove caracteres especiais e espaços extras
+                category = re.sub(r'[{}"]', '', category)
+                category = ' '.join(category.split())
                 
                 # Lista de categorias válidas
                 valid_categories = [
@@ -416,61 +423,52 @@ class AIService:
                     "Cidadania", "Saúde e Bem-estar"
                 ]
                 
-                # Verifica se a categoria gerada é válida
                 if category in valid_categories:
                     return category
-                
-                # Se a categoria não for válida, retorna uma categoria padrão
                 return "Cidadania"  # Categoria padrão
+            else:
+                print(f"Erro ao gerar categoria: {response.status_code}")
+                return "Cidadania"
+                
         except Exception as e:
             print(f"Erro ao gerar categoria: {str(e)}")
-        
-        # Fallback: retorna uma categoria padrão
-        return "Cidadania"
+            return "Cidadania"
     
-    def generate_tags(self, content):
-        """Gera tags relevantes baseadas no conteúdo."""
-        prompt = f"""Analise o seguinte conteúdo e sugira 5 tags relevantes.
-        As tags devem:
-        1. Ser palavras-chave que descrevem o conteúdo
-        2. Estar em português europeu (pt-PT)
-        3. Ser adequadas para crianças
-        4. Ser específicas ao tema
-        5. Ter no máximo 2 palavras cada
-        
-        Conteúdo:
-        {content}
-        
-        Responda apenas com as tags separadas por vírgula."""
-        
-        result = self.adapter.generate(prompt)
-        if isinstance(result, dict) and "response" in result:
-            return [tag.strip() for tag in result["response"].split(",")]
-        return []
-    
-    def generate_excerpt(self, content):
-        """Gera um resumo conciso do conteúdo."""
-        prompt = f"""Crie um resumo curto e atraente do seguinte conteúdo.
-        O resumo deve:
-        1. Ter no máximo 2-3 frases
-        2. Capturar a essência do texto
-        3. Ser escrito em português europeu (pt-PT)
-        4. Ser adequado para crianças
-        5. Ser envolvente e despertar interesse
-        
-        Conteúdo:
-        {content}
-        
-        Responda apenas com o resumo."""
-        
+    def generate_slug(self, title):
+        """Gera um slug a partir do título."""
+        return slugify(title, allow_unicode=True)
+
+    def generate_excerpt(self, content, max_length=200):
+        """Gera um resumo do conteúdo usando IA."""
         try:
-            result = self.adapter.generate(prompt)
-            if isinstance(result, dict) and "response" in result:
-                excerpt = result["response"].strip()
-                if excerpt:
-                    return excerpt
+            # Limita o conteúdo para evitar tokens excessivos
+            content_preview = content[:1000]
+            
+            prompt = f"""Gera um resumo conciso do seguinte texto em português, com no máximo {max_length} caracteres:
+
+{content_preview}
+
+Resumo:"""
+
+            response = requests.post(
+                f"{self.base_url}/api/generate",
+                json={
+                    "model": self.model,
+                    "prompt": prompt,
+                    "stream": False
+                }
+            )
+            
+            if response.status_code == 200:
+                excerpt = response.json()['response'].strip()
+                # Remove caracteres especiais e espaços extras
+                excerpt = re.sub(r'[{}"]', '', excerpt)
+                excerpt = ' '.join(excerpt.split())
+                return excerpt[:max_length]
+            else:
+                print(f"Erro ao gerar excerpt: {response.status_code}")
+                return content[:max_length] + "..."
+                
         except Exception as e:
             print(f"Erro ao gerar excerpt: {str(e)}")
-        
-        # Fallback: retorna os primeiros 200 caracteres do conteúdo
-        return content[:200] + "..." 
+            return content[:max_length] + "..." 

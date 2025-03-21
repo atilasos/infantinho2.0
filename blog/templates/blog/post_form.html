@@ -1,228 +1,343 @@
 {% extends 'blog/base.html' %}
 {% load static %}
+{% load crispy_forms_tags %}
 
-{% block title %}{% if post %}Editar Post{% else %}Criar Novo Post{% endif %} - Infantinho 2.0{% endblock %}
+{% block title %}{% if form.instance.pk %}Editar Post{% else %}Novo Post{% endif %} - Blog - Infantinho 2.0{% endblock %}
 
-{% block content %}
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-md-10">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">{% if post %}Editar Post{% else %}Criar Novo Post{% endif %}</h4>
-                </div>
-                <div class="card-body">
-                    <form method="post" class="space-y-6">
-                        {% csrf_token %}
-                        
-                        <!-- Título -->
-                        <div>
-                            <label for="title" class="block text-sm font-medium text-gray-700">Título</label>
-                            <input type="text" name="title" id="title" required
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                   value="{{ form.title.value|default:'' }}">
-                            {% if form.title.errors %}
-                                <p class="mt-1 text-sm text-red-600">{{ form.title.errors.0 }}</p>
-                            {% endif %}
-                        </div>
+{% block extra_css %}
+{{ block.super }}
+<style>
+    .post-form {
+        background-color: white;
+        padding: 2rem;
+        border-radius: 15px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .form-title {
+        font-size: 1.8rem;
+        margin-bottom: 2rem;
+        color: var(--primary-color);
+        text-align: center;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-group label {
+        font-weight: 500;
+        color: var(--text-color);
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-control {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 0.75rem;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(255, 107, 107, 0.25);
+    }
+    
+    .form-control::placeholder {
+        color: #6c757d;
+    }
+    
+    textarea.form-control {
+        min-height: 200px;
+        resize: vertical;
+    }
+    
+    .preview-section {
+        background-color: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin-top: 2rem;
+    }
+    
+    .preview-title {
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+        color: var(--primary-color);
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--primary-color);
+    }
+    
+    .preview-content {
+        color: var(--text-color);
+        line-height: 1.6;
+    }
+    
+    .preview-content h1, .preview-content h2, .preview-content h3 {
+        color: var(--primary-color);
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .preview-content p {
+        margin-bottom: 1rem;
+    }
+    
+    .preview-content img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        margin: 1rem 0;
+    }
+    
+    .preview-content blockquote {
+        border-left: 4px solid var(--primary-color);
+        padding-left: 1rem;
+        margin: 1rem 0;
+        font-style: italic;
+        color: #6c757d;
+    }
+    
+    .preview-content code {
+        background-color: #f8f9fa;
+        padding: 0.2rem 0.4rem;
+        border-radius: 3px;
+        font-family: 'Courier New', Courier, monospace;
+    }
+    
+    .preview-content pre {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 5px;
+        overflow-x: auto;
+        margin: 1rem 0;
+    }
+    
+    .tips-section {
+        background-color: white;
+        padding: 1.5rem;
+        border-radius: 15px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+    
+    .tips-title {
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+        color: var(--primary-color);
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--primary-color);
+    }
+    
+    .tip-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+    
+    .tip-icon {
+        width: 24px;
+        height: 24px;
+        background-color: var(--primary-color);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+    
+    .tip-content {
+        color: var(--text-color);
+    }
+    
+    .tip-content h4 {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+        color: var(--primary-color);
+    }
+    
+    .tip-content p {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin-bottom: 0;
+    }
+    
+    .btn-submit {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        border-radius: 25px;
+        padding: 0.75rem 2rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-submit:hover {
+        background-color: #FF5252;
+        border-color: #FF5252;
+        transform: translateY(-2px);
+    }
+    
+    .btn-cancel {
+        background-color: #6c757d;
+        border-color: #6c757d;
+        border-radius: 25px;
+        padding: 0.75rem 2rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-cancel:hover {
+        background-color: #5a6268;
+        border-color: #5a6268;
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
 
-                        <!-- Conteúdo -->
-                        <div>
-                            <label for="content" class="block text-sm font-medium text-gray-700">Conteúdo</label>
-                            <div id="editor-container">
-                                <textarea name="content" id="content" required
-                                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                          rows="20">{{ form.content.value|default:'' }}</textarea>
-                            </div>
-                            {% if form.content.errors %}
-                                <p class="mt-1 text-sm text-red-600">{{ form.content.errors.0 }}</p>
-                            {% endif %}
-                        </div>
-
-                        <!-- Status -->
-                        <div>
-                            <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
-                            <select name="status" id="status"
-                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                <option value="draft" {% if form.status.value == 'draft' %}selected{% endif %}>Rascunho</option>
-                                <option value="pending" {% if form.status.value == 'pending' %}selected{% endif %}>Aguardando Aprovação</option>
-                            </select>
-                            {% if form.status.errors %}
-                                <p class="mt-1 text-sm text-red-600">{{ form.status.errors.0 }}</p>
-                            {% endif %}
-                        </div>
-
-                        <!-- Botões -->
-                        <div class="flex justify-between">
-                            <button type="submit" class="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-                                Criar Post
-                            </button>
-                            
-                            <div class="space-x-2">
-                                <button type="button" onclick="generateSuggestions()" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                    <svg class="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" />
-                                    </svg>
-                                    Gerar Sugestões
-                                </button>
-                                
-                                <button type="button" onclick="enhanceContent()" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                    <svg class="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
-                                    </svg>
-                                    Melhorar Conteúdo
-                                </button>
-                                
-                                <button type="button" onclick="moderateContent()" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                    <svg class="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                                    </svg>
-                                    Moderar Conteúdo
-                                </button>
-                            </div>
-                        </div>
-                    </form>
+{% block blog_content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="post-form">
+                <h1 class="form-title">
+                    {% if form.instance.pk %}
+                    <i class="fas fa-edit me-2"></i>
+                    Editar Post
+                    {% else %}
+                    <i class="fas fa-plus me-2"></i>
+                    Novo Post
+                    {% endif %}
+                </h1>
+                
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        {{ form.title|as_crispy_field }}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.category|as_crispy_field }}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.tags|as_crispy_field }}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.content|as_crispy_field }}
+                    </div>
+                    
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'blog:post_list' %}" class="btn btn-cancel">
+                            <i class="fas fa-times me-2"></i>
+                            Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-submit">
+                            <i class="fas fa-save me-2"></i>
+                            Salvar
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="preview-section">
+                    <h3 class="preview-title">
+                        <i class="fas fa-eye me-2"></i>
+                        Preview
+                    </h3>
+                    <div class="preview-content" id="preview"></div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
-
-<!-- Modais -->
-<div id="suggestionsModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 hidden">
-    <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-        <div class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
-            <div class="sm:flex sm:items-start">
-                <div class="mt-3 text-center sm:mt-0 sm:text-left">
-                    <h3 class="text-base font-semibold leading-6 text-gray-900">Sugestões Geradas</h3>
-                    <div class="mt-2">
-                        <p class="text-sm text-gray-500" id="suggestionsContent"></p>
+        
+        <div class="col-md-4">
+            <div class="tips-section">
+                <h3 class="tips-title">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    Dicas para Escrever um Bom Post
+                </h3>
+                
+                <div class="tip-item">
+                    <div class="tip-icon">
+                        <i class="fas fa-heading"></i>
+                    </div>
+                    <div class="tip-content">
+                        <h4>Título Atraente</h4>
+                        <p>Escolha um título que capture a atenção e descreva bem o conteúdo do seu post.</p>
+                    </div>
+                </div>
+                
+                <div class="tip-item">
+                    <div class="tip-icon">
+                        <i class="fas fa-paragraph"></i>
+                    </div>
+                    <div class="tip-content">
+                        <h4>Conteúdo Bem Estruturado</h4>
+                        <p>Organize seu texto em parágrafos curtos e use subtítulos para melhor legibilidade.</p>
+                    </div>
+                </div>
+                
+                <div class="tip-item">
+                    <div class="tip-icon">
+                        <i class="fas fa-image"></i>
+                    </div>
+                    <div class="tip-content">
+                        <h4>Imagens Relevantes</h4>
+                        <p>Inclua imagens que complementem seu texto e tornem o post mais atraente.</p>
+                    </div>
+                </div>
+                
+                <div class="tip-item">
+                    <div class="tip-icon">
+                        <i class="fas fa-tags"></i>
+                    </div>
+                    <div class="tip-content">
+                        <h4>Tags Apropriadas</h4>
+                        <p>Use tags relevantes para ajudar outros usuários a encontrar seu post.</p>
+                    </div>
+                </div>
+                
+                <div class="tip-item">
+                    <div class="tip-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="tip-content">
+                        <h4>Revisão Final</h4>
+                        <p>Revise seu texto antes de publicar para garantir que está claro e sem erros.</p>
+                    </div>
+                </div>
+                
+                <div class="tip-item">
+                    <div class="tip-icon">
+                        <i class="fas fa-share-alt"></i>
+                    </div>
+                    <div class="tip-content">
+                        <h4>Compartilhamento</h4>
+                        <p>Após publicar, compartilhe seu post nas redes sociais para alcançar mais pessoas.</p>
                     </div>
                 </div>
             </div>
-            <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
-                <button type="button" onclick="closeModal('suggestionsModal')" class="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 sm:ml-3 sm:w-auto">Fechar</button>
-            </div>
         </div>
     </div>
 </div>
+{% endblock %}
 
-<div id="enhancementModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 hidden">
-    <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-        <div class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
-            <div class="sm:flex sm:items-start">
-                <div class="mt-3 text-center sm:mt-0 sm:text-left">
-                    <h3 class="text-base font-semibold leading-6 text-gray-900">Conteúdo Melhorado</h3>
-                    <div class="mt-2">
-                        <p class="text-sm text-gray-500" id="enhancementContent"></p>
-                    </div>
-                </div>
-            </div>
-            <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
-                <button type="button" onclick="closeModal('enhancementModal')" class="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 sm:ml-3 sm:w-auto">Fechar</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div id="moderationModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 hidden">
-    <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-        <div class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
-            <div class="sm:flex sm:items-start">
-                <div class="mt-3 text-center sm:mt-0 sm:text-left">
-                    <h3 class="text-base font-semibold leading-6 text-gray-900">Resultado da Moderação</h3>
-                    <div class="mt-2">
-                        <p class="text-sm text-gray-500" id="moderationContent"></p>
-                    </div>
-                </div>
-            </div>
-            <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
-                <button type="button" onclick="closeModal('moderationModal')" class="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 sm:ml-3 sm:w-auto">Fechar</button>
-            </div>
-        </div>
-    </div>
-</div>
-
+{% block extra_js %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
-    // Inicializa o editor Markdown
-    const editor = new EasyMDE({
-        element: document.getElementById('content'),
-        spellChecker: false,
-        status: false,
-        toolbar: [
-            'bold', 'italic', 'heading', '|',
-            'quote', 'unordered-list', 'ordered-list', '|',
-            'link', 'image', '|',
-            'preview', 'side-by-side', 'fullscreen', '|',
-            'guide'
-        ]
-    });
-
-    // Funções para os modais
-    function showModal(modalId) {
-        document.getElementById(modalId).classList.remove('hidden');
+document.addEventListener('DOMContentLoaded', function() {
+    const contentField = document.querySelector('#id_content');
+    const previewDiv = document.querySelector('#preview');
+    
+    function updatePreview() {
+        const content = contentField.value;
+        previewDiv.innerHTML = marked.parse(content);
     }
-
-    function closeModal(modalId) {
-        document.getElementById(modalId).classList.add('hidden');
-    }
-
-    // Funções para as funcionalidades de IA
-    async function generateSuggestions() {
-        const content = editor.value();
-        try {
-            const response = await fetch('/ai/generate-suggestions/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                },
-                body: JSON.stringify({ content })
-            });
-            const data = await response.json();
-            document.getElementById('suggestionsContent').innerHTML = data.suggestions;
-            showModal('suggestionsModal');
-        } catch (error) {
-            console.error('Erro ao gerar sugestões:', error);
-        }
-    }
-
-    async function enhanceContent() {
-        const content = editor.value();
-        try {
-            const response = await fetch('/ai/enhance-content/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                },
-                body: JSON.stringify({ content })
-            });
-            const data = await response.json();
-            document.getElementById('enhancementContent').innerHTML = data.enhanced_content;
-            showModal('enhancementModal');
-        } catch (error) {
-            console.error('Erro ao melhorar conteúdo:', error);
-        }
-    }
-
-    async function moderateContent() {
-        const content = editor.value();
-        try {
-            const response = await fetch('/ai/moderate-content/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                },
-                body: JSON.stringify({ content })
-            });
-            const data = await response.json();
-            document.getElementById('moderationContent').innerHTML = data.moderation_result;
-            showModal('moderationModal');
-        } catch (error) {
-            console.error('Erro ao moderar conteúdo:', error);
-        }
-    }
+    
+    contentField.addEventListener('input', updatePreview);
+    updatePreview();
+});
 </script>
 {% endblock %} 

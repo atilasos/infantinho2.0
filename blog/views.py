@@ -1,21 +1,26 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.contrib import messages
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.db.models import Q
-from django.http import JsonResponse
+from django.db.models import Q, Count, Sum
+from django.http import JsonResponse, HttpResponseRedirect
 from django.views.decorators.http import require_POST
 from django.utils import timezone
-from .models import Post, Category, Tag, Comment, PostReaction, UserProfile, Class
+from .models import Post, Category, Comment, PostReaction, UserProfile, Class
 from .forms import CommentForm, PostForm
 from ai_core.services import AIService
 from django.utils.text import slugify
+import logging
+from taggit.models import Tag
+
+logger = logging.getLogger(__name__)
 
 ai_service = AIService()
 
 def post_list(request):
     """Display a list of published blog posts."""
-    posts = Post.objects.filter(status='published')
+    posts = Post.objects.filter(status='published').order_by('-created_at')
     
     # Search functionality
     query = request.GET.get('q')
@@ -42,8 +47,17 @@ def post_list(request):
     posts = paginator.get_page(page_number)
     
     # Get categories and tags for sidebar
-    categories = Category.objects.all()
-    tags = Tag.objects.all()
+    categories = Category.objects.annotate(
+        post_count=Count('posts')
+    ).order_by('-post_count')
+    tags = Tag.objects.annotate(
+        post_count=Count('taggit_taggeditem_items')
+    ).order_by('-post_count')[:10]
+    
+    # Autores em destaque
+    featured_authors = User.objects.annotate(
+        post_count=Count('blog_posts')
+    ).filter(post_count__gt=0).order_by('-post_count')[:5]
     
     context = {
         'posts': posts,
@@ -52,6 +66,7 @@ def post_list(request):
         'query': query,
         'category_slug': category_slug,
         'tag_slug': tag_slug,
+        'featured_authors': featured_authors,
     }
     return render(request, 'blog/post_list.html', context)
 
@@ -98,61 +113,61 @@ def post_reaction(request, slug):
     post = get_object_or_404(Post, slug=slug)
     reaction_type = request.POST.get('reaction')
     
-    if reaction_type not in dict(PostReaction.REACTION_CHOICES):
-        return JsonResponse({'error': 'Invalid reaction type'}, status=400)
+    # Remove existing reaction if any
+    PostReaction.objects.filter(post=post, user=request.user).delete()
     
-    # Get or create reaction
-    reaction, created = PostReaction.objects.get_or_create(
-        post=post,
-        user=request.user,
-        defaults={'reaction': reaction_type}
-    )
-    
-    if not created:
-        if reaction.reaction == reaction_type:
-            # Remove reaction if clicking the same type
-            reaction.delete()
-            post.likes_count -= 1
-        else:
-            # Update reaction if changing type
-            reaction.reaction = reaction_type
-            reaction.save()
-    
-    post.save()
-    
-    return JsonResponse({
-        'likes_count': post.likes_count,
-        'reaction': reaction_type if created else None
-    })
+    if reaction_type in ['like', 'dislike']:
+        PostReaction.objects.create(
+            post=post,
+            user=request.user,
+            reaction=reaction_type
+        )
+        
+    return JsonResponse({'status': 'success'})
 
-def category_list(request, slug):
-    """Display posts filtered by category."""
-    category = get_object_or_404(Category, slug=slug)
-    posts = Post.objects.filter(category=category, status='published')
+def category_list(request):
+    categories = Category.objects.annotate(
+        posts_count=Count('posts'),
+        total_views=Sum('posts__views')
+    ).order_by('-posts_count')
     
-    paginator = Paginator(posts, 10)
-    page_number = request.GET.get('page')
-    posts = paginator.get_page(page_number)
+    # Estatísticas totais
+    total_posts = Post.objects.count()
+    total_views = Post.objects.aggregate(Sum('views'))['views__sum'] or 0
+    
+    # Categorias populares (top 5)
+    popular_categories = categories[:5]
     
     context = {
-        'category': category,
-        'posts': posts,
+        'categories': categories,
+        'total_posts': total_posts,
+        'total_views': total_views,
+        'popular_categories': popular_categories,
     }
+    
     return render(request, 'blog/category_list.html', context)
 
-def tag_list(request, slug):
-    """Display posts filtered by tag."""
-    tag = get_object_or_404(Tag, slug=slug)
-    posts = Post.objects.filter(tags=tag, status='published')
+def tag_list(request):
+    """Display all tags."""
+    tags = Tag.objects.annotate(
+        posts_count=Count('taggit_taggeditem_items'),
+        total_views=Sum('taggit_taggeditem_items__content_object__views')
+    ).order_by('-posts_count')
     
-    paginator = Paginator(posts, 10)
-    page_number = request.GET.get('page')
-    posts = paginator.get_page(page_number)
+    # Estatísticas totais
+    total_posts = Post.objects.count()
+    total_views = Post.objects.aggregate(Sum('views'))['views__sum'] or 0
+    
+    # Tags populares (top 5)
+    popular_tags = tags[:5]
     
     context = {
-        'tag': tag,
-        'posts': posts,
+        'tags': tags,
+        'total_posts': total_posts,
+        'total_views': total_views,
+        'popular_tags': popular_tags,
     }
+    
     return render(request, 'blog/tag_list.html', context)
 
 @login_required
@@ -162,7 +177,7 @@ def post_create(request):
     print("FILES data:", request.FILES)  # Debug log
     
     if request.method == 'POST':
-        form = PostForm(request.POST)
+        form = PostForm(request.POST, request.FILES)
         print("Form is valid:", form.is_valid())  # Debug log
         if form.is_valid():
             post = form.save(commit=False)
@@ -253,9 +268,13 @@ def post_edit(request, slug):
     post = get_object_or_404(Post, slug=slug, author=request.user)
     
     if request.method == 'POST':
-        form = PostForm(request.POST, instance=post)
+        form = PostForm(request.POST, request.FILES, instance=post)
         if form.is_valid():
-            post = form.save()
+            post = form.save(commit=False)
+            post.slug = slugify(post.title)
+            post.save()
+            form.save_m2m()  # Save tags
+            messages.success(request, 'Post atualizado com sucesso!')
             return redirect('blog:post_detail', slug=post.slug)
     else:
         form = PostForm(instance=post)
@@ -302,8 +321,28 @@ def post_reject(request, slug):
 
 @login_required
 def my_posts(request):
-    posts = Post.objects.filter(author=request.user)
-    return render(request, 'blog/my_posts.html', {'posts': posts})
+    posts = Post.objects.filter(author=request.user).order_by('-created_at')
+    
+    # Estatísticas totais
+    total_posts = posts.count()
+    total_views = posts.aggregate(Sum('views'))['views__sum'] or 0
+    total_likes = posts.aggregate(Count('likes'))['likes__count']
+    total_comments = Comment.objects.filter(post__in=posts).count()
+    
+    # Paginação
+    paginator = Paginator(posts, 10)
+    page = request.GET.get('page')
+    posts = paginator.get_page(page)
+    
+    context = {
+        'posts': posts,
+        'total_posts': total_posts,
+        'total_views': total_views,
+        'total_likes': total_likes,
+        'total_comments': total_comments,
+    }
+    
+    return render(request, 'blog/my_posts.html', context)
 
 @login_required
 def pending_posts(request):
@@ -368,3 +407,154 @@ def dislike_post(request, slug):
         'likes_count': post.likes_count,
         'dislikes_count': post.dislikes_count
     })
+
+@login_required
+def post_delete(request, slug):
+    """Remove um post."""
+    post = get_object_or_404(Post, slug=slug, author=request.user)
+    
+    if request.method == 'POST':
+        try:
+            post.delete()
+            messages.success(request, 'Post removido com sucesso!')
+        except Exception as e:
+            logger.error(f"Erro ao remover post: {str(e)}")
+            messages.error(request, 'Erro ao remover o post. Por favor, tente novamente.')
+    
+    return redirect('blog:my_posts')
+
+def search(request):
+    query = request.GET.get('q', '')
+    posts = Post.objects.filter(status='published')
+    
+    if query:
+        posts = posts.filter(
+            Q(title__icontains=query) |
+            Q(content__icontains=query) |
+            Q(tags__name__icontains=query) |
+            Q(category__name__icontains=query)
+        ).distinct()
+    
+    # Ordenar por data de criação (mais recentes primeiro)
+    posts = posts.order_by('-created_at')
+    
+    # Paginação
+    paginator = Paginator(posts, 10)
+    page = request.GET.get('page')
+    posts = paginator.get_page(page)
+    
+    # Categorias populares
+    popular_categories = Category.objects.annotate(
+        post_count=Count('posts')
+    ).order_by('-post_count')[:5]
+    
+    # Tags populares
+    popular_tags = Tag.objects.annotate(
+        post_count=Count('taggit_taggeditem_items')
+    ).order_by('-post_count')[:10]
+    
+    context = {
+        'posts': posts,
+        'query': query,
+        'popular_categories': popular_categories,
+        'popular_tags': popular_tags,
+    }
+    
+    return render(request, 'blog/search.html', context)
+
+def category_detail(request, slug):
+    """Display posts filtered by category."""
+    category = get_object_or_404(Category, slug=slug)
+    posts = Post.objects.filter(category=category, status='published').order_by('-created_at')
+    
+    # Estatísticas
+    unique_authors = posts.values('author').distinct().count()
+    total_views = posts.aggregate(Sum('views'))['views__sum'] or 0
+    
+    # Categorias relacionadas (excluindo a atual)
+    related_categories = Category.objects.exclude(id=category.id).annotate(
+        post_count=Count('posts')
+    ).order_by('-post_count')[:5]
+    
+    # Paginação
+    paginator = Paginator(posts, 10)
+    page = request.GET.get('page')
+    posts = paginator.get_page(page)
+    
+    context = {
+        'category': category,
+        'posts': posts,
+        'unique_authors': unique_authors,
+        'total_views': total_views,
+        'related_categories': related_categories,
+    }
+    
+    return render(request, 'blog/category_detail.html', context)
+
+def tag_detail(request, slug):
+    """Display posts filtered by tag."""
+    tag = get_object_or_404(Tag, slug=slug)
+    posts = Post.objects.filter(tags=tag, status='published').order_by('-created_at')
+    
+    # Estatísticas
+    unique_authors = posts.values('author').distinct().count()
+    total_views = posts.aggregate(Sum('views'))['views__sum'] or 0
+    total_likes = posts.aggregate(Count('likes'))['likes__count']
+    
+    # Tags relacionadas (excluindo a atual)
+    related_tags = Tag.objects.exclude(id=tag.id).annotate(
+        post_count=Count('taggit_taggeditem_items')
+    ).order_by('-post_count')[:5]
+    
+    # Paginação
+    paginator = Paginator(posts, 10)
+    page = request.GET.get('page')
+    posts = paginator.get_page(page)
+    
+    context = {
+        'tag': tag,
+        'posts': posts,
+        'unique_authors': unique_authors,
+        'total_views': total_views,
+        'total_likes': total_likes,
+        'related_tags': related_tags,
+    }
+    
+    return render(request, 'blog/tag_detail.html', context)
+
+def author_posts(request, username):
+    """Display posts by a specific author."""
+    author = get_object_or_404(User, username=username)
+    posts = Post.objects.filter(author=author, status='published').order_by('-created_at')
+    
+    # Estatísticas do autor
+    total_posts = posts.count()
+    total_views = posts.aggregate(Sum('views'))['views__sum'] or 0
+    total_likes = posts.aggregate(Sum('likes_count'))['likes_count__sum'] or 0
+    
+    # Categorias mais usadas pelo autor
+    author_categories = Category.objects.filter(posts__author=author).annotate(
+        posts_count=Count('posts')
+    ).order_by('-posts_count')[:5]
+    
+    # Tags mais usadas pelo autor
+    author_tags = Tag.objects.filter(taggit_taggeditem_items__content_object__author=author).annotate(
+        posts_count=Count('taggit_taggeditem_items')
+    ).order_by('-posts_count')[:10]
+    
+    # Pagination
+    paginator = Paginator(posts, 10)  # Show 10 posts per page
+    page_number = request.GET.get('page')
+    posts = paginator.get_page(page_number)
+    
+    context = {
+        'author': author,
+        'posts': posts,
+        'total_posts': total_posts,
+        'total_views': total_views,
+        'total_likes': total_likes,
+        'author_categories': author_categories,
+        'author_tags': author_tags,
+    }
+    
+    return render(request, 'blog/author_posts.html', context)

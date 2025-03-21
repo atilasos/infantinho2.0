@@ -3,8 +3,10 @@ from django.utils.html import format_html
 from django.urls import path
 from django.shortcuts import redirect
 from django.contrib import messages
-from .models import Category, Tag, Post, Comment, PostReaction
+from .models import Category, Post, Comment, PostReaction, UserProfile, Class
 from ai_core.services import OllamaService
+from taggit.admin import TagAdmin
+from taggit.models import Tag
 
 ollama_service = OllamaService()
 
@@ -13,23 +15,17 @@ class CategoryAdmin(admin.ModelAdmin):
     list_display = ('name', 'slug', 'created_at')
     search_fields = ('name', 'description')
     prepopulated_fields = {'slug': ('name',)}
-
-@admin.register(Tag)
-class TagAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug', 'created_at')
-    search_fields = ('name',)
-    prepopulated_fields = {'slug': ('name',)}
+    ordering = ('name',)
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
-    list_display = ('title', 'author', 'category', 'status', 'published_at', 'is_featured')
-    list_filter = ('status', 'category', 'is_featured', 'created_at', 'published_at')
-    search_fields = ('title', 'content', 'excerpt')
+    list_display = ('title', 'author', 'category', 'status', 'created_at', 'views_count')
+    list_filter = ('status', 'category', 'created_at')
+    search_fields = ('title', 'content')
     prepopulated_fields = {'slug': ('title',)}
-    date_hierarchy = 'published_at'
-    ordering = ('-published_at', '-created_at')
-    filter_horizontal = ('tags',)
-    readonly_fields = ('views_count', 'likes_count', 'created_at', 'updated_at')
+    date_hierarchy = 'created_at'
+    ordering = ('-created_at',)
+    filter_horizontal = ('likes', 'dislikes')
     
     fieldsets = (
         (None, {
@@ -150,19 +146,31 @@ class PostAdmin(admin.ModelAdmin):
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
-    list_display = ('post', 'author', 'created_at', 'is_approved')
-    list_filter = ('is_approved', 'created_at')
+    list_display = ('author', 'post', 'created_at', 'active')
+    list_filter = ('active', 'created_at')
     search_fields = ('content', 'author__username', 'post__title')
-    readonly_fields = ('created_at', 'updated_at')
-    actions = ['approve_comments']
+    date_hierarchy = 'created_at'
+    ordering = ('-created_at',)
 
-    def approve_comments(self, request, queryset):
-        queryset.update(is_approved=True)
-    approve_comments.short_description = "Aprovar comentários selecionados"
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'user_type', 'created_at')
+    list_filter = ('user_type', 'created_at')
+    search_fields = ('user__username', 'user__email', 'bio')
+    ordering = ('-created_at',)
+
+@admin.register(Class)
+class ClassAdmin(admin.ModelAdmin):
+    list_display = ('name', 'teacher', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('name', 'teacher__username')
+    filter_horizontal = ('students',)
+    ordering = ('-created_at',)
 
 @admin.register(PostReaction)
 class PostReactionAdmin(admin.ModelAdmin):
-    list_display = ('post', 'user', 'reaction', 'created_at')
+    list_display = ('user', 'post', 'reaction', 'created_at')
     list_filter = ('reaction', 'created_at')
-    search_fields = ('post__title', 'user__username')
-    readonly_fields = ('created_at',)
+    search_fields = ('user__username', 'post__title')
+    date_hierarchy = 'created_at'
+    ordering = ('-created_at',)

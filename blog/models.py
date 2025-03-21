@@ -9,10 +9,12 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.utils.html import mark_safe
 from django.conf import settings
+from taggit.managers import TaggableManager
 
 User = get_user_model()
 
 class Category(models.Model):
+    """Categoria de um post."""
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=100, unique=True)
     description = models.TextField(blank=True)
@@ -20,7 +22,7 @@ class Category(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name_plural = "categories"
+        verbose_name_plural = 'categories'
         ordering = ['name']
 
     def __str__(self):
@@ -28,20 +30,7 @@ class Category(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
-        super().save(*args, **kwargs)
-
-class Tag(models.Model):
-    name = models.CharField(max_length=50, unique=True)
-    slug = models.SlugField(max_length=50, unique=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.name
-
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.name)
+            self.slug = slugify(self.name, allow_unicode=True)
         super().save(*args, **kwargs)
 
 class UserProfile(models.Model):
@@ -80,52 +69,51 @@ class Class(models.Model):
         verbose_name_plural = 'Turmas'
 
 class Post(models.Model):
-    STATUS_CHOICES = [
+    """Post do blog."""
+    STATUS_CHOICES = (
         ('draft', 'Rascunho'),
-        ('pending', 'Aguardando Aprovação'),
         ('published', 'Publicado'),
-        ('rejected', 'Rejeitado'),
-    ]
+    )
 
     title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=200, unique=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blog_posts')
     content = models.TextField()
     excerpt = models.TextField(blank=True)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='posts')
+    tags = TaggableManager()
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     published_at = models.DateTimeField(null=True, blank=True)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft')
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='posts')
-    tags = models.ManyToManyField(Tag, related_name='posts')
-    featured_image = models.ImageField(upload_to='blog_images/', null=True, blank=True)
-    views = models.PositiveIntegerField(default=0)
     likes = models.ManyToManyField(User, related_name='liked_posts', blank=True)
     dislikes = models.ManyToManyField(User, related_name='disliked_posts', blank=True)
+    views = models.PositiveIntegerField(default=0)
     class_group = models.ForeignKey(Class, on_delete=models.SET_NULL, null=True, blank=True, related_name='posts')
     views_count = models.PositiveIntegerField(default=0)
     likes_count = models.PositiveIntegerField(default=0)
+    dislikes_count = models.PositiveIntegerField(default=0)
+    comments_count = models.PositiveIntegerField(default=0)
     meta_description = models.CharField(max_length=160, blank=True)
     meta_keywords = models.CharField(max_length=200, blank=True)
     is_featured = models.BooleanField(default=False)
     allow_comments = models.BooleanField(default=True)
 
+    class Meta:
+        ordering = ['-published_at', '-created_at']
+
     def __str__(self):
         return self.title
 
+    def get_absolute_url(self):
+        return reverse('blog:post_detail', args=[self.slug])
+
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.title)
+            self.slug = slugify(self.title, allow_unicode=True)
         if self.status == 'published' and not self.published_at:
             self.published_at = timezone.now()
         super().save(*args, **kwargs)
-
-    def get_absolute_url(self):
-        return reverse('blog:post_detail', kwargs={'slug': self.slug})
-
-    def clean(self):
-        if self.status == 'published' and not self.excerpt:
-            raise ValidationError(_('Published posts must have an excerpt.'))
 
     def can_edit(self, user):
         return user == self.author or user.profile.user_type == 'admin'
@@ -136,25 +124,36 @@ class Post(models.Model):
     def can_delete(self, user):
         return user == self.author or user.profile.user_type == 'admin'
 
-    class Meta:
-        ordering = ['-created_at']
-        verbose_name = 'Post'
-        verbose_name_plural = 'Posts'
+    @property
+    def likes_count(self):
+        return self.likes.count()
+
+    @property
+    def dislikes_count(self):
+        return self.dislikes.count()
+
+    @property
+    def comments_count(self):
+        return self.comments.filter(active=True).count()
 
 class Comment(models.Model):
+    """Comentário em um post."""
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blog_comments')
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    active = models.BooleanField(default=True)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies')
-    is_approved = models.BooleanField(default=False)
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ['created_at']
 
     def __str__(self):
-        return f'Comment by {self.author.username} on {self.post.title}'
+        return f'Comentário de {self.author.username} em {self.post.title}'
+
+    def get_absolute_url(self):
+        return f"{self.post.get_absolute_url()}#comment-{self.id}"
 
 class PostReaction(models.Model):
     REACTION_CHOICES = [

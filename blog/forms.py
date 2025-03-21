@@ -1,31 +1,35 @@
 from django import forms
-from .models import Comment, Post, Category, Tag, Class
+from .models import Comment, Post, Category, Class
 from django.utils.text import slugify
+from taggit.forms import TagWidget
 
 class CommentForm(forms.ModelForm):
+    """Formulário para criar e editar comentários."""
     class Meta:
         model = Comment
-        fields = ['content']
+        fields = ('content',)
         widgets = {
-            'content': forms.Textarea(attrs={'class': 'form-control', 'rows': 4})
+            'content': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
         }
 
 class PostForm(forms.ModelForm):
+    """Formulário para criar e editar posts."""
     class Meta:
         model = Post
-        fields = ['title', 'content', 'status']
+        fields = ('title', 'content', 'category', 'tags', 'status')
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
-            'content': forms.Textarea(attrs={'class': 'form-control'}),
-            'status': forms.Select(attrs={'class': 'form-control'})
+            'content': forms.Textarea(attrs={'class': 'form-control', 'rows': 10}),
+            'category': forms.Select(attrs={'class': 'form-control'}),
+            'tags': forms.TextInput(attrs={'class': 'form-control', 'data-role': 'tagsinput'}),
+            'status': forms.Select(attrs={'class': 'form-control'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['status'].choices = [
-            ('draft', 'Rascunho'),
-            ('pending', 'Aguardando Aprovação')
-        ]
+        self.fields['title'].widget.attrs.update({'class': 'form-control'})
+        self.fields['category'].widget.attrs.update({'class': 'form-control'})
+        self.fields['status'].widget.attrs.update({'class': 'form-control'})
         self.fields['content'].required = False
 
     def save(self, commit=True):
@@ -58,13 +62,11 @@ class CategoryForm(forms.ModelForm):
             })
         }
 
-class TagForm(forms.ModelForm):
+class ClassForm(forms.ModelForm):
     class Meta:
-        model = Tag
-        fields = ['name']
+        model = Class
+        fields = ('name', 'students')
         widgets = {
-            'name': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Digite o nome da tag'
-            })
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'students': forms.SelectMultiple(attrs={'class': 'form-control'}),
         } 

@@ -1,136 +1,279 @@
 {% extends 'blog/base.html' %}
+{% load static %}
 
-{% block title %}{{ tag.name }} - Infantinho 2.0{% endblock %}
+{% block title %}Tags - Blog - Infantinho 2.0{% endblock %}
 
-{% block content %}
-<div class="mb-4">
-    <h1 class="display-4">{{ tag.name }}</h1>
-    {% if tag.description %}
-        <p class="lead">{{ tag.description }}</p>
-    {% endif %}
-</div>
-
-{% if posts %}
-    {% for post in posts %}
-        <article class="card mb-4">
-            {% if post.featured_image %}
-                <img src="{{ post.featured_image.url }}" class="card-img-top" alt="{{ post.title }}">
-            {% endif %}
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div>
-                        <span class="category-badge">{{ post.category.name }}</span>
-                    </div>
-                    <small class="text-muted">
-                        <i class="far fa-calendar-alt me-1"></i>
-                        {{ post.published_at|date:"d F Y" }}
-                    </small>
-                </div>
-                
-                <h2 class="card-title h4">
-                    <a href="{% url 'blog:post_detail' post.slug %}" class="text-decoration-none text-dark">
-                        {{ post.title }}
-                    </a>
-                </h2>
-                
-                <p class="card-text">{{ post.excerpt }}</p>
-                
-                <div class="d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center">
-                        <img src="https://via.placeholder.com/32" class="rounded-circle me-2" alt="{{ post.author.username }}">
-                        <small class="text-muted">
-                            Por {{ post.author.get_full_name|default:post.author.username }}
-                        </small>
-                    </div>
-                    
-                    <div class="d-flex gap-3">
-                        <button class="reaction-btn" data-post-id="{{ post.id }}" data-reaction="like">
-                            <i class="far fa-heart"></i>
-                            <span class="ms-1">{{ post.likes_count }}</span>
-                        </button>
-                        <a href="{% url 'blog:post_detail' post.slug %}#comments" class="text-muted text-decoration-none">
-                            <i class="far fa-comment"></i>
-                            <span class="ms-1">{{ post.comments.count }}</span>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </article>
-    {% endfor %}
+{% block extra_css %}
+{{ block.super }}
+<style>
+    .tag-list {
+        margin-top: 2rem;
+    }
     
-    <!-- Pagination -->
-    {% if posts.has_other_pages %}
-        <nav aria-label="Navegação de páginas" class="mt-4">
-            <ul class="pagination justify-content-center">
-                {% if posts.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ posts.previous_page_number }}">
-                            Anterior
-                        </a>
-                    </li>
-                {% endif %}
-                
-                {% for num in posts.paginator.page_range %}
-                    {% if posts.number == num %}
-                        <li class="page-item active">
-                            <span class="page-link">{{ num }}</span>
-                        </li>
-                    {% elif num > posts.number|add:'-3' and num < posts.number|add:'3' %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ num }}">
-                                {{ num }}
-                            </a>
-                        </li>
-                    {% endif %}
-                {% endfor %}
-                
-                {% if posts.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ posts.next_page_number }}">
-                            Próxima
-                        </a>
-                    </li>
-                {% endif %}
-            </ul>
-        </nav>
-    {% endif %}
-{% else %}
-    <div class="alert alert-info">
-        Nenhum artigo encontrado com esta palavra-chave.
-    </div>
-{% endif %}
+    .tag-header {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 3rem 1rem;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    
+    .tag-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+    }
+    
+    .tag-stats {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-top: 1.5rem;
+    }
+    
+    .stat-item {
+        text-align: center;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 0.3rem;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.8;
+    }
+    
+    .tag-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+    
+    .tag-card {
+        background-color: white;
+        border-radius: 15px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+    
+    .tag-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .tag-header {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 1.5rem;
+        text-align: center;
+    }
+    
+    .tag-name {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    
+    .tag-stats {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    
+    .tag-stats i {
+        margin-right: 0.3rem;
+    }
+    
+    .tag-content {
+        padding: 1.5rem;
+    }
+    
+    .tag-posts {
+        margin-top: 1rem;
+    }
+    
+    .post-preview {
+        padding: 1rem;
+        border-bottom: 1px solid #eee;
+        transition: all 0.3s ease;
+    }
+    
+    .post-preview:last-child {
+        border-bottom: none;
+    }
+    
+    .post-preview:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .post-preview-title {
+        font-size: 1.1rem;
+        font-weight: 500;
+        color: var(--primary-color);
+        margin-bottom: 0.5rem;
+        text-decoration: none;
+    }
+    
+    .post-preview-title:hover {
+        color: var(--accent-color);
+    }
+    
+    .post-preview-meta {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    .post-preview-meta i {
+        margin-right: 0.3rem;
+    }
+    
+    .view-all {
+        display: inline-block;
+        margin-top: 1rem;
+        color: var(--primary-color);
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .view-all:hover {
+        color: var(--accent-color);
+    }
+    
+    .view-all i {
+        margin-left: 0.3rem;
+        transition: transform 0.3s ease;
+    }
+    
+    .view-all:hover i {
+        transform: translateX(5px);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        background-color: #f8f9fa;
+        border-radius: 15px;
+        margin-top: 2rem;
+    }
+    
+    .empty-state-icon {
+        font-size: 3rem;
+        color: #6c757d;
+        margin-bottom: 1rem;
+    }
+    
+    .empty-state-text {
+        color: #6c757d;
+        font-size: 1.1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .btn-create {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        border-radius: 25px;
+        padding: 0.75rem 2rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-create:hover {
+        background-color: var(--accent-color);
+        border-color: var(--accent-color);
+        transform: translateY(-2px);
+    }
+</style>
 {% endblock %}
 
-{% block extra_js %}
-<script>
-$(document).ready(function() {
-    // Handle post reactions
-    $('.reaction-btn').click(function() {
-        const btn = $(this);
-        const postId = btn.data('post-id');
-        const reaction = btn.data('reaction');
-        
-        $.ajax({
-            url: `/blog/post/${postId}/reaction/`,
-            method: 'POST',
-            data: {
-                'reaction': reaction,
-                'csrfmiddlewaretoken': '{{ csrf_token }}'
-            },
-            success: function(response) {
-                const countSpan = btn.find('span');
-                countSpan.text(response.likes_count);
-                
-                if (response.reaction) {
-                    btn.addClass('active');
-                    btn.find('i').removeClass('far').addClass('fas');
-                } else {
-                    btn.removeClass('active');
-                    btn.find('i').removeClass('fas').addClass('far');
-                }
-            }
-        });
-    });
-});
-</script>
+{% block blog_content %}
+<div class="tag-header">
+    <h1 class="tag-title">Tags</h1>
+    <div class="tag-stats">
+        <div class="stat-item">
+            <div class="stat-value">{{ total_posts }}</div>
+            <div class="stat-label">Posts</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{{ total_views }}</div>
+            <div class="stat-label">Visualizações</div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="tag-list">
+        {% if tags %}
+            <div class="tag-grid">
+                {% for tag in tags %}
+                    <div class="tag-card">
+                        <div class="tag-header">
+                            <h2 class="tag-name">{{ tag.name }}</h2>
+                            <div class="tag-stats">
+                                <span>
+                                    <i class="fas fa-file-alt"></i>
+                                    {{ tag.posts_count }} posts
+                                </span>
+                                <span>
+                                    <i class="fas fa-eye"></i>
+                                    {{ tag.total_views }} visualizações
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="tag-content">
+                            <div class="tag-posts">
+                                {% for post in tag.posts.all|slice:":5" %}
+                                    <div class="post-preview">
+                                        <a href="{% url 'blog:post_detail' post.slug %}" class="post-preview-title">
+                                            {{ post.title }}
+                                        </a>
+                                        <div class="post-preview-meta">
+                                            <span>
+                                                <i class="fas fa-user"></i>
+                                                {{ post.author.get_full_name|default:post.author.username }}
+                                            </span>
+                                            <span class="mx-2">•</span>
+                                            <span>
+                                                <i class="fas fa-calendar"></i>
+                                                {{ post.created_at|date:"d/m/Y" }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                                
+                                {% if tag.posts.count > 5 %}
+                                    <a href="{% url 'blog:tag_detail' tag.slug %}" class="view-all">
+                                        Ver todos os posts
+                                        <i class="fas fa-arrow-right"></i>
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-tags"></i>
+                </div>
+                <p class="empty-state-text">Nenhuma tag encontrada.</p>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'blog:post_create' %}" class="btn btn-create">
+                        <i class="fas fa-plus me-2"></i>
+                        Criar Primeiro Post
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
 {% endblock %} 

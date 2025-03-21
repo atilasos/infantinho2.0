@@ -5,7 +5,7 @@ Portal educativo baseado em Django com funcionalidades de IA para aprendizagem c
 ## Requisitos
 
 - Python 3.8 ou superior
-- pip (gerenciador de pacotes Python)
+- uv (gerenciador de pacotes Python mais rápido)
 - Git
 - Ollama (para funcionalidades de IA)
 
@@ -13,38 +13,43 @@ Portal educativo baseado em Django com funcionalidades de IA para aprendizagem c
 
 1. Clone o repositório:
 ```bash
-git clone https://github.com/seu-usuario/infantinho2.0.git
+git clone https://github.com/atilasos/infantinho2.0.git
 cd infantinho2.0/backend
 ```
 
-2. Crie e ative um ambiente virtual:
+2. Instale o uv (se ainda não tiver):
 ```bash
-python -m venv venv
-source venv/bin/activate  # No Windows: venv\Scripts\activate
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-3. Instale as dependências:
+3. Crie e ative um ambiente virtual com uv:
 ```bash
-pip install -r requirements.txt
+uv venv
+source .venv/bin/activate  # No Windows: .venv\Scripts\activate
 ```
 
-4. Configure as variáveis de ambiente:
+4. Instale as dependências:
+```bash
+uv pip install -r requirements.txt
+```
+
+5. Configure as variáveis de ambiente:
 ```bash
 cp .env.example .env
 # Edite o arquivo .env com suas configurações
 ```
 
-5. Execute as migrações:
+6. Execute as migrações:
 ```bash
 python manage.py migrate
 ```
 
-6. Crie um superusuário:
+7. Crie um superusuário:
 ```bash
 python manage.py createsuperuser
 ```
 
-7. Inicie o servidor de desenvolvimento:
+8. Inicie o servidor de desenvolvimento:
 ```bash
 python manage.py runserver
 ```
@@ -151,7 +156,6 @@ Infantinho 2.0 employs dynamic cooperative assessment, simultaneously focusing o
 ## Technical Implementation
 
 Infantinho 2.0 Portal integrates advanced digital tools and intelligence technologies within a robust Django-based architecture, aligning closely with MEM philosophy and research-driven methodologies.
-
 
 ### AI-Enhanced Functionalities
 
