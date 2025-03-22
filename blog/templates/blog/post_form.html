@@ -289,7 +289,12 @@
                     
                     <div class="d-flex justify-content-between mt-4">
                         <a href="{% url 'blog:post_list' %}" class="btn btn-cancel">Cancelar</a>
-                        <button type="submit" class="btn btn-submit">Guardar</button>
+                        <div>
+                            <button type="button" class="btn btn-primary me-2" onclick="generateSuggestions()">
+                                <i class="fas fa-magic me-2"></i>Gerar Sugestões
+                            </button>
+                            <button type="submit" class="btn btn-submit">Guardar</button>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -407,13 +412,17 @@ document.addEventListener('DOMContentLoaded', function() {
         updatePreview();
     });
     
-    // Verifica se precisa gerar sugestões ao submeter o formulário
-    form.addEventListener('submit', function(e) {
-        if (!categoryField.value || !tagsField.value) {
-            e.preventDefault(); // Previne o envio do formulário
+    // Adiciona o evento de submit ao formulário
+    form.addEventListener('submit', handleSubmit);
+    
+    // Adiciona evento de clique para o botão de gerar sugestões
+    const generateButton = document.querySelector('button[onclick="generateSuggestions()"]');
+    if (generateButton) {
+        generateButton.addEventListener('click', function(e) {
+            e.preventDefault();
             generateSuggestions();
-        }
-    });
+        });
+    }
 });
 
 function updatePreview() {
@@ -432,7 +441,14 @@ function generateSuggestions() {
     // Mostra indicador de carregamento
     const modal = document.getElementById('suggestionsModal');
     modal.style.display = 'block';
-    modal.querySelector('.modal-content').innerHTML = '<h3 class="mb-4">A gerar sugestões...</h3>';
+    modal.querySelector('.modal-content').innerHTML = `
+        <h3 class="mb-4">A gerar sugestões...</h3>
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">A carregar...</span>
+            </div>
+        </div>
+    `;
     
     fetch('{% url "blog:suggest_categories_and_tags" %}', {
         method: 'POST',
@@ -442,7 +458,12 @@ function generateSuggestions() {
         },
         body: `content=${encodeURIComponent(content)}`
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Erro na resposta do servidor');
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.error) {
             throw new Error(data.error);
@@ -451,8 +472,15 @@ function generateSuggestions() {
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Erro ao gerar sugestões: ' + error.message);
-        closeModal();
+        modal.querySelector('.modal-content').innerHTML = `
+            <h3 class="mb-4">Erro ao gerar sugestões</h3>
+            <div class="alert alert-danger">
+                ${error.message}
+            </div>
+            <div class="suggestion-actions mt-4">
+                <button class="btn btn-cancel" onclick="closeModal()">Fechar</button>
+            </div>
+        `;
     });
 }
 
@@ -540,11 +568,53 @@ function applySuggestions() {
     }
     
     if (tags.length > 0) {
+        // Atualiza o campo de tags com as tags selecionadas
         tagsField.value = tags.join(', ');
     }
     
     closeModal();
-    document.getElementById('post-form').submit();
+    
+    // Força a submissão do formulário
+    const form = document.getElementById('post-form');
+    if (form) {
+        // Remove o evento de submit que previne o envio
+        form.removeEventListener('submit', handleSubmit);
+        
+        // Cria um novo FormData com os valores atualizados
+        const formData = new FormData(form);
+        formData.set('tags', tags.join(', '));
+        
+        // Submete o formulário com os dados atualizados
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                window.location.href = response.url;
+            } else {
+                throw new Error('Erro ao salvar o post');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erro ao salvar o post. Por favor, tente novamente.');
+        });
+    }
+}
+
+// Função para lidar com o submit do formulário
+function handleSubmit(e) {
+    const categoryField = document.querySelector('select[name="category"]');
+    const tagsField = document.querySelector('input[name="tags"]');
+    
+    if (!categoryField.value || !tagsField.value) {
+        e.preventDefault();
+        generateSuggestions();
+    }
 }
 
 // Fecha o modal quando clica fora dele

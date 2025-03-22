@@ -11,3 +11,4 @@ django-extensions==3.2.3
 ipython==8.22.2
 python-dotenv==1.0.1
 openai-agents>=0.0.2
+nest-asyncio==1.6.0

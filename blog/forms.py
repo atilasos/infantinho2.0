@@ -31,6 +31,7 @@ class PostForm(forms.ModelForm):
         self.fields['category'].widget.attrs.update({'class': 'form-control'})
         self.fields['status'].widget.attrs.update({'class': 'form-control'})
         self.fields['content'].required = False
+        self.fields['category'].required = False
         self.fields['status'].initial = 'draft'
 
     def save(self, commit=True):
@@ -46,6 +47,19 @@ class PostForm(forms.ModelForm):
         if not content or not content.strip():
             raise forms.ValidationError('O conteúdo é obrigatório.')
         return content.strip()
+
+    def suggest_category(self):
+        """Sugere uma categoria baseada no conteúdo do post."""
+        from ai_core.agents import blog_agent
+        content = self.cleaned_data.get('content', '')
+        if content:
+            try:
+                suggestions = blog_agent.suggest_categories_and_tags(content)
+                if suggestions and 'category' in suggestions:
+                    return suggestions['category']
+            except Exception as e:
+                print(f"Erro ao sugerir categoria: {str(e)}")
+        return None
 
 class CategoryForm(forms.ModelForm):
     class Meta:

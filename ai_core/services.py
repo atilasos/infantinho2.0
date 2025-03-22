@@ -256,22 +256,50 @@ class OllamaService:
         }}
         """
         
-        response = self._make_request("/api/generate", {
-            "model": self.model,
-            "prompt": prompt,
-            "stream": False
-        })
-        
         try:
-            # Tenta extrair o JSON da resposta
-            json_str = response["response"].strip()
+            response = self._make_request("/api/generate", {
+                "model": self.model,
+                "prompt": prompt,
+                "stream": False
+            })
+            # Extrai o JSON da resposta
+            json_str = response.get("response", "").strip()
+            
+            # Remove marcadores de código se presentes
             if json_str.startswith("```json"):
                 json_str = json_str[7:]
             if json_str.endswith("```"):
-                json_str = json_str[:-3]
-            return json.loads(json_str)
-        except:
-            # Se não conseguir extrair o JSON, retorna valores padrão
+                json_str = json_str[:-4]
+            
+            # Remove espaços em branco extras
+            json_str = json_str.strip()
+            
+            # Tenta fazer o parse do JSON
+            try:
+                suggestions = json.loads(json_str)
+            except json.JSONDecodeError as e:
+                print(f"Erro ao fazer parse do JSON: {str(e)}")
+                print(f"JSON string: {json_str}")
+                raise
+            
+            # Validação básica das sugestões
+            if not isinstance(suggestions, dict):
+                raise ValueError("A resposta não é um dicionário")
+            if 'category' not in suggestions:
+                raise ValueError("A resposta não contém uma categoria")
+            if 'tags' not in suggestions:
+                raise ValueError("A resposta não contém tags")
+            if not suggestions['category']:
+                raise ValueError("A categoria está vazia")
+            if not suggestions['tags']:
+                raise ValueError("As tags estão vazias")
+            
+            # Limpa e valida as tags
+            suggestions['tags'] = [tag.strip() for tag in suggestions['tags'] if tag.strip()]
+            
+            return suggestions
+        except Exception as e:
+            print(f"Erro ao processar sugestões: {str(e)}")
             return {
                 "category": "Geral",
                 "tags": ["educação", "infância", "aprendizado", "desenvolvimento", "crianças"]

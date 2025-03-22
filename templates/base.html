@@ -36,15 +36,41 @@
         .navbar-brand {
             color: white !important;
             font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
         }
         
         .nav-link {
-            color: rgba(255,255,255,0.9) !important;
+            color: rgba(255,255,255,0.95) !important;
+            font-weight: 500;
             transition: color 0.3s ease;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
         }
         
         .nav-link:hover {
             color: white !important;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        
+        .navbar .form-control {
+            background-color: rgba(255,255,255,0.9);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: var(--text-color);
+        }
+        
+        .navbar .form-control:focus {
+            background-color: white;
+            border-color: white;
+            box-shadow: 0 0 0 0.2rem rgba(255,255,255,0.25);
+        }
+        
+        .navbar .btn-outline-light {
+            border-color: rgba(255,255,255,0.5);
+            color: white;
+        }
+        
+        .navbar .btn-outline-light:hover {
+            background-color: rgba(255,255,255,0.1);
+            border-color: white;
         }
         
         .btn-primary {

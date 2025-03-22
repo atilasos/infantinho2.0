@@ -178,43 +178,60 @@ def tag_list(request):
 @login_required
 def post_create(request):
     """View para criar um novo post."""
-    print("POST data:", request.POST)  # Debug log
-    print("FILES data:", request.FILES)  # Debug log
-    
     if request.method == 'POST':
         form = PostForm(request.POST, request.FILES)
-        print("Form is valid:", form.is_valid())  # Debug log
         if form.is_valid():
             post = form.save(commit=False)
             post.author = request.user
-            post.status = 'draft'  # Define o status inicial como draft
+            post.status = 'draft'
             
-            # Se não houver categoria selecionada, cria uma temporária
-            if not post.category:
-                temp_category, _ = Category.objects.get_or_create(
-                    name='Temporária',
-                    defaults={'slug': 'temporaria'}
-                )
-                post.category = temp_category
-                print("Categoria temporária criada:", temp_category.name)  # Debug log
+            # Se não houver categoria selecionada, tenta sugerir uma
+            if not post.category_id:  # Usando category_id em vez de category
+                try:
+                    suggested_category = form.suggest_category()
+                    if suggested_category:
+                        # Cria ou obtém a categoria sugerida
+                        category, created = Category.objects.get_or_create(
+                            name=suggested_category,
+                            defaults={'slug': slugify(suggested_category)}
+                        )
+                        post.category = category
+                        if created:
+                            messages.info(request, f'Categoria "{suggested_category}" foi criada automaticamente.')
+                        else:
+                            messages.info(request, f'Categoria "{suggested_category}" foi selecionada automaticamente.')
+                    else:
+                        # Se não conseguir sugerir uma categoria, cria uma temporária
+                        temp_category, created = Category.objects.get_or_create(
+                            name='Temporária',
+                            defaults={'slug': 'temporaria'}
+                        )
+                        post.category = temp_category
+                        if created:
+                            messages.warning(request, 'Uma categoria temporária foi criada.')
+                        else:
+                            messages.warning(request, 'Uma categoria temporária foi selecionada.')
+                except Exception as e:
+                    # Cria uma categoria temporária em caso de erro
+                    temp_category, _ = Category.objects.get_or_create(
+                        name='Temporária',
+                        defaults={'slug': 'temporaria'}
+                    )
+                    post.category = temp_category
+                    messages.error(request, 'Ocorreu um erro ao sugerir categoria. Uma categoria temporária foi selecionada.')
             
             # Gera resumo automaticamente
             try:
-                print("Gerando excerpt para o conteúdo:", post.content[:100])  # Debug log
                 excerpt = blog_agent.generate_excerpt(post.content)
-                print("Excerpt gerado:", excerpt)  # Debug log
                 if excerpt:
                     post.excerpt = excerpt
                 else:
-                    # Se não conseguir gerar o excerpt, usa os primeiros 200 caracteres do conteúdo
                     post.excerpt = post.content[:200] + "..."
             except Exception as e:
-                print("Erro ao gerar excerpt:", str(e))  # Debug log
-                post.excerpt = post.content[:200] + "..."  # Fallback para um resumo simples
+                post.excerpt = post.content[:200] + "..."
             
             # Gera o slug a partir do título
             post.slug = slugify(post.title)
-            print("Slug gerado:", post.slug)  # Debug log
             
             # Verifica se já existe um post com o mesmo slug
             base_slug = post.slug
@@ -222,62 +239,34 @@ def post_create(request):
             while Post.objects.filter(slug=post.slug).exists():
                 post.slug = f"{base_slug}-{counter}"
                 counter += 1
-                print("Slug atualizado para:", post.slug)  # Debug log
             
             try:
-                print("Tentando salvar o post...")  # Debug log
-                post.save()  # Salva primeiro para gerar o slug
-                print("Post salvo com sucesso!")  # Debug log
+                post.save()
                 
-                # Gera e adiciona tags automaticamente
-                try:
-                    suggestions = blog_agent.suggest_categories_and_tags(post.content)
-                    print("Sugestões geradas:", suggestions)  # Debug log
+                # Processa as tags do formulário
+                tags = form.cleaned_data.get('tags', [])
+                if tags:
+                    # Se as tags vierem como string, converte para lista
+                    if isinstance(tags, str):
+                        tags = [tag.strip() for tag in tags.split(',') if tag.strip()]
                     
-                    # Atualiza a categoria com a sugerida
-                    if suggestions and 'category' in suggestions:
-                        category_name = suggestions['category']
-                        category, _ = Category.objects.get_or_create(
-                            name=category_name,
-                            defaults={'slug': slugify(category_name)}
+                    # Adiciona cada tag ao post
+                    for tag_name in tags:
+                        tag, _ = Tag.objects.get_or_create(
+                            name=tag_name,
+                            defaults={'slug': slugify(tag_name)}
                         )
-                        post.category = category
-                        post.save()
-                        print("Categoria atualizada para:", category.name)  # Debug log
-                    
-                    # Adiciona as tags sugeridas
-                    if suggestions and 'tags' in suggestions:
-                        tags = suggestions['tags']
-                        print("Tags geradas:", tags)  # Debug log
-                        for tag_name in tags:
-                            tag, _ = Tag.objects.get_or_create(
-                                name=tag_name,
-                                defaults={'slug': slugify(tag_name)}
-                            )
-                            post.tags.add(tag)
-                except Exception as e:
-                    print("Erro ao gerar sugestões:", str(e))  # Debug log
+                        post.tags.add(tag)
                 
-                # Adiciona mensagem de sucesso
-                messages.success(request, 'Post criado com sucesso! Aguardando aprovação.')
-                
-                # Redireciona para a lista de posts do usuário
-                return redirect('blog:my_posts')
+                messages.success(request, 'Post criado com sucesso!')
+                return redirect('blog:post_detail', slug=post.slug)
             except Exception as e:
-                print("Erro ao salvar post:", str(e))  # Debug log
-                messages.error(request, f'Erro ao criar o post: {str(e)}')
+                messages.error(request, f'Erro ao salvar o post: {str(e)}')
                 return render(request, 'blog/post_form.html', {'form': form})
-        else:
-            print("Form errors:", form.errors)  # Debug log
-            messages.error(request, 'Por favor, corrija os erros no formulário.')
-            return render(request, 'blog/post_form.html', {'form': form})
     else:
         form = PostForm()
     
-    return render(request, 'blog/post_form.html', {
-        'form': form,
-        'post': None
-    })
+    return render(request, 'blog/post_form.html', {'form': form})
 
 @login_required
 def post_edit(request, slug):

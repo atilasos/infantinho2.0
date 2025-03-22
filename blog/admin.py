@@ -47,7 +47,7 @@ class PostAdmin(admin.ModelAdmin):
             'fields': ('allow_comments',)
         }),
         ('Statistics', {
-            'fields': ('views_count', 'likes_count', 'created_at', 'updated_at'),
+            'fields': ('views_count', 'likes_count', 'updated_at'),
             'classes': ('collapse',)
         }),
     )
