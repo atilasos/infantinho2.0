@@ -31,6 +31,7 @@ class PostForm(forms.ModelForm):
         self.fields['category'].widget.attrs.update({'class': 'form-control'})
         self.fields['status'].widget.attrs.update({'class': 'form-control'})
         self.fields['content'].required = False
+        self.fields['status'].initial = 'draft'
 
     def save(self, commit=True):
         instance = super().save(commit=False)

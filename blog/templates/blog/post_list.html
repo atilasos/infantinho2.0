@@ -187,7 +187,9 @@
                         <div class="post-meta">
                             <span>
                                 <i class="fas fa-user me-1"></i>
-                                <a href="{% url 'blog:author_posts' post.author.username %}">
+                                <a href="{% url 'blog:author_posts' post.author.username %}" class="d-inline-flex align-items-center">
+                                    <img src="{% if post.author.profile.avatar %}{{ post.author.profile.avatar.url }}{% else %}{% static 'images/default-avatar.png' %}{% endif %}" 
+                                         alt="Avatar" class="rounded-circle me-2" style="width: 24px; height: 24px; object-fit: cover;">
                                     {{ post.author.get_full_name|default:post.author.username }}
                                 </a>
                             </span>
@@ -331,7 +333,7 @@
                 </h3>
                 {% for author in featured_authors %}
                 <div class="author-card">
-                    <img src="{{ author.profile.avatar.url|default:'/static/images/default-avatar.png' }}" 
+                    <img src="{% if author.profile.avatar %}{{ author.profile.avatar.url }}{% else %}{% static 'images/default-avatar.png' %}{% endif %}" 
                          alt="{{ author.get_full_name|default:author.username }}"
                          class="author-avatar">
                     <div class="author-name">

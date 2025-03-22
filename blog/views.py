@@ -9,14 +9,13 @@ from django.views.decorators.http import require_POST
 from django.utils import timezone
 from .models import Post, Category, Comment, PostReaction, UserProfile, Class
 from .forms import CommentForm, PostForm
-from ai_core.services import AIService
+from ai_core.agents import blog_agent
 from django.utils.text import slugify
 import logging
 from taggit.models import Tag
+import markdown
 
 logger = logging.getLogger(__name__)
-
-ai_service = AIService()
 
 def post_list(request):
     """Display a list of published blog posts."""
@@ -83,8 +82,8 @@ def post_detail(request, slug):
     post.views_count += 1
     post.save()
     
-    # Get approved comments
-    comments = post.comments.filter(is_approved=True)
+    # Get active comments
+    comments = post.comments.filter(active=True)
     
     # Handle comment submission
     if request.method == 'POST':
@@ -98,6 +97,12 @@ def post_detail(request, slug):
             return redirect('blog:post_detail', slug=slug)
     else:
         comment_form = CommentForm()
+    
+    # Convert markdown content to HTML
+    post.content_html = markdown.markdown(
+        post.content,
+        extensions=['extra', 'codehilite', 'toc']
+    )
     
     context = {
         'post': post,
@@ -182,12 +187,21 @@ def post_create(request):
         if form.is_valid():
             post = form.save(commit=False)
             post.author = request.user
-            post.status = 'pending'  # Define o status inicial como pendente
+            post.status = 'draft'  # Define o status inicial como draft
+            
+            # Se não houver categoria selecionada, cria uma temporária
+            if not post.category:
+                temp_category, _ = Category.objects.get_or_create(
+                    name='Temporária',
+                    defaults={'slug': 'temporaria'}
+                )
+                post.category = temp_category
+                print("Categoria temporária criada:", temp_category.name)  # Debug log
             
             # Gera resumo automaticamente
             try:
                 print("Gerando excerpt para o conteúdo:", post.content[:100])  # Debug log
-                excerpt = ai_service.generate_excerpt(post.content)
+                excerpt = blog_agent.generate_excerpt(post.content)
                 print("Excerpt gerado:", excerpt)  # Debug log
                 if excerpt:
                     post.excerpt = excerpt
@@ -197,19 +211,6 @@ def post_create(request):
             except Exception as e:
                 print("Erro ao gerar excerpt:", str(e))  # Debug log
                 post.excerpt = post.content[:200] + "..."  # Fallback para um resumo simples
-            
-            # Gera categoria automaticamente se não foi selecionada
-            try:
-                category_name = ai_service.generate_category(post.content)
-                print("Categoria gerada:", category_name)  # Debug log
-                if category_name:
-                    category, _ = Category.objects.get_or_create(
-                        name=category_name,
-                        defaults={'slug': slugify(category_name)}
-                    )
-                    post.category = category
-            except Exception as e:
-                print("Erro ao gerar categoria:", str(e))  # Debug log
             
             # Gera o slug a partir do título
             post.slug = slugify(post.title)
@@ -230,16 +231,32 @@ def post_create(request):
                 
                 # Gera e adiciona tags automaticamente
                 try:
-                    tags = ai_service.generate_tags(post.content)
-                    print("Tags geradas:", tags)  # Debug log
-                    for tag_name in tags:
-                        tag, _ = Tag.objects.get_or_create(
-                            name=tag_name,
-                            defaults={'slug': slugify(tag_name)}
+                    suggestions = blog_agent.suggest_categories_and_tags(post.content)
+                    print("Sugestões geradas:", suggestions)  # Debug log
+                    
+                    # Atualiza a categoria com a sugerida
+                    if suggestions and 'category' in suggestions:
+                        category_name = suggestions['category']
+                        category, _ = Category.objects.get_or_create(
+                            name=category_name,
+                            defaults={'slug': slugify(category_name)}
                         )
-                        post.tags.add(tag)
+                        post.category = category
+                        post.save()
+                        print("Categoria atualizada para:", category.name)  # Debug log
+                    
+                    # Adiciona as tags sugeridas
+                    if suggestions and 'tags' in suggestions:
+                        tags = suggestions['tags']
+                        print("Tags geradas:", tags)  # Debug log
+                        for tag_name in tags:
+                            tag, _ = Tag.objects.get_or_create(
+                                name=tag_name,
+                                defaults={'slug': slugify(tag_name)}
+                            )
+                            post.tags.add(tag)
                 except Exception as e:
-                    print("Erro ao gerar tags:", str(e))  # Debug log
+                    print("Erro ao gerar sugestões:", str(e))  # Debug log
                 
                 # Adiciona mensagem de sucesso
                 messages.success(request, 'Post criado com sucesso! Aguardando aprovação.')
@@ -558,3 +575,17 @@ def author_posts(request, username):
     }
     
     return render(request, 'blog/author_posts.html', context)
+
+@require_POST
+def suggest_categories_and_tags(request):
+    if request.method == 'POST':
+        content = request.POST.get('content', '')
+        if content:
+            try:
+                from ai_core.agents import blog_agent
+                suggestions = blog_agent.suggest_categories_and_tags(content)
+                return JsonResponse(suggestions)
+            except Exception as e:
+                return JsonResponse({'error': str(e)}, status=500)
+        return JsonResponse({'error': 'No content provided'}, status=400)
+    return JsonResponse({'error': 'Method not allowed'}, status=405)

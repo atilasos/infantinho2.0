@@ -6,6 +6,7 @@ from .adapters import OllamaAdapter
 import os
 import re
 from django.utils.text import slugify
+import json
 
 class OllamaService:
     def __init__(self, base_url: str = "http://localhost:11434"):
@@ -237,6 +238,44 @@ class OllamaService:
         })
         
         return [tag.strip() for tag in response["response"].split(",")]
+
+    def suggest_categories_and_tags(self, content: str) -> Dict[str, List[str]]:
+        """Generate suggested categories and tags for the content."""
+        prompt = f"""
+        Analise o seguinte conteúdo e sugira:
+        1. Uma categoria principal que melhor descreve o tema
+        2. 5 tags relevantes que ajudam a identificar os subtemas
+        
+        Conteúdo:
+        {content}
+        
+        Responda no formato JSON:
+        {{
+            "category": "nome da categoria",
+            "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"]
+        }}
+        """
+        
+        response = self._make_request("/api/generate", {
+            "model": self.model,
+            "prompt": prompt,
+            "stream": False
+        })
+        
+        try:
+            # Tenta extrair o JSON da resposta
+            json_str = response["response"].strip()
+            if json_str.startswith("```json"):
+                json_str = json_str[7:]
+            if json_str.endswith("```"):
+                json_str = json_str[:-3]
+            return json.loads(json_str)
+        except:
+            # Se não conseguir extrair o JSON, retorna valores padrão
+            return {
+                "category": "Geral",
+                "tags": ["educação", "infância", "aprendizado", "desenvolvimento", "crianças"]
+            }
 
 class AIService:
     def __init__(self):

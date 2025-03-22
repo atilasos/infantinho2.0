@@ -1,6 +1,5 @@
 {% extends 'blog/base.html' %}
 {% load static %}
-{% load markdown_extras %}
 
 {% block title %}{{ post.title }} - Blog - Infantinho 2.0{% endblock %}
 
@@ -354,7 +353,7 @@
                 
                 {% if user == post.author %}
                 <div class="d-flex justify-content-end mb-4">
-                    <a href="{% url 'blog:post_update' post.slug %}" class="btn btn-primary me-2">
+                    <a href="{% url 'blog:post_edit' post.slug %}" class="btn btn-primary me-2">
                         <i class="fas fa-edit me-2"></i>
                         Editar
                     </a>
@@ -366,7 +365,7 @@
                 {% endif %}
                 
                 <div class="post-content">
-                    {{ post.content|safe }}
+                    {{ post.content_html|safe }}
                 </div>
                 
                 <div class="post-actions">
@@ -489,9 +488,15 @@
         
         <div class="col-md-4">
             <div class="author-card">
-                <img src="{{ post.author.profile.avatar.url|default:'/static/images/default-avatar.png' }}" 
-                     alt="{{ post.author.get_full_name|default:post.author.username }}"
-                     class="author-avatar">
+                {% if post.author.profile.avatar %}
+                    <img src="{{ post.author.profile.avatar.url }}" 
+                         alt="{{ post.author.get_full_name|default:post.author.username }}"
+                         class="author-avatar">
+                {% else %}
+                    <img src="{% static 'images/default-avatar.png' %}" 
+                         alt="{{ post.author.get_full_name|default:post.author.username }}"
+                         class="author-avatar">
+                {% endif %}
                 <h4 class="author-name">
                     <a href="{% url 'blog:author_posts' post.author.username %}" class="text-decoration-none">
                         {{ post.author.get_full_name|default:post.author.username }}

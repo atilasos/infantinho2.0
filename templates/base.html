@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="pt">
 <head>
@@ -113,6 +114,8 @@
                     {% if user.is_authenticated %}
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                                <img src="{% if user.profile.avatar %}{{ user.profile.avatar.url }}{% else %}{% static 'images/default-avatar.png' %}{% endif %}" 
+                                     alt="Avatar" class="rounded-circle me-2" style="width: 24px; height: 24px; object-fit: cover;">
                                 {{ user.username }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">

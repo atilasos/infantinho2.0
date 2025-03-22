@@ -192,7 +192,7 @@ AUTHENTICATION_BACKENDS = [
 # django-allauth settings
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'http'
@@ -231,3 +231,13 @@ OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'gemma3')
 # Crispy Forms
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
+
+# AI Agent Configuration
+AI_AGENT_CONFIG = {
+    'max_tokens': 2000,
+    'temperature': 0.7,
+    'model': OLLAMA_MODEL,
+    'language': 'pt-PT',
+    'target_audience': 'children',
+    'age_range': '6-12'
+}

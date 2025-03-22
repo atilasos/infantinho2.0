@@ -192,25 +192,74 @@
         border-color: #5a6268;
         transform: translateY(-2px);
     }
+    
+    /* Modal styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+    }
+    
+    .modal-content {
+        background-color: #fefefe;
+        margin: 15% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+        max-width: 500px;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .suggestion-item {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        margin: 5px 0;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .suggestion-item:hover {
+        background-color: #f8f9fa;
+        border-color: var(--primary-color);
+    }
+    
+    .suggestion-item.selected {
+        background-color: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+    }
+    
+    .suggestion-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 20px;
+    }
+    
+    .custom-input {
+        margin-top: 10px;
+    }
 </style>
 {% endblock %}
 
 {% block blog_content %}
-<div class="container">
-    <div class="row">
+<div class="container py-5">
+    <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="post-form">
                 <h1 class="form-title">
-                    {% if form.instance.pk %}
-                    <i class="fas fa-edit me-2"></i>
-                    Editar Post
-                    {% else %}
-                    <i class="fas fa-plus me-2"></i>
-                    Novo Post
-                    {% endif %}
+                    {% if form.instance.pk %}Editar Post{% else %}Novo Post{% endif %}
                 </h1>
                 
-                <form method="post" enctype="multipart/form-data">
+                <form method="post" enctype="multipart/form-data" id="post-form">
                     {% csrf_token %}
                     
                     <div class="form-group">
@@ -224,30 +273,25 @@
                     <div class="form-group">
                         {{ form.tags|as_crispy_field }}
                     </div>
+
+                    <div class="form-group">
+                        {{ form.status|as_crispy_field }}
+                    </div>
                     
                     <div class="form-group">
                         {{ form.content|as_crispy_field }}
                     </div>
                     
-                    <div class="d-flex justify-content-end gap-2">
-                        <a href="{% url 'blog:post_list' %}" class="btn btn-cancel">
-                            <i class="fas fa-times me-2"></i>
-                            Cancelar
-                        </a>
-                        <button type="submit" class="btn btn-submit">
-                            <i class="fas fa-save me-2"></i>
-                            Salvar
-                        </button>
+                    <div class="preview-section">
+                        <h2 class="preview-title">Pré-visualização</h2>
+                        <div class="preview-content" id="preview-content"></div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'blog:post_list' %}" class="btn btn-cancel">Cancelar</a>
+                        <button type="submit" class="btn btn-submit">Guardar</button>
                     </div>
                 </form>
-                
-                <div class="preview-section">
-                    <h3 class="preview-title">
-                        <i class="fas fa-eye me-2"></i>
-                        Preview
-                    </h3>
-                    <div class="preview-content" id="preview"></div>
-                </div>
             </div>
         </div>
         
@@ -321,6 +365,31 @@
         </div>
     </div>
 </div>
+
+<!-- Modal para Sugestões de IA -->
+<div id="suggestionsModal" class="modal">
+    <div class="modal-content">
+        <h3 class="mb-4">Sugestões de IA</h3>
+        <div id="categorySuggestions">
+            <h4>Categoria Sugerida:</h4>
+            <div id="categoryList"></div>
+            <div class="custom-input">
+                <input type="text" id="customCategory" class="form-control" placeholder="Ou digite uma nova categoria">
+            </div>
+        </div>
+        <div id="tagSuggestions" class="mt-4">
+            <h4>Etiquetas Sugeridas:</h4>
+            <div id="tagList"></div>
+            <div class="custom-input">
+                <input type="text" id="customTag" class="form-control" placeholder="Ou digite uma nova etiqueta">
+            </div>
+        </div>
+        <div class="suggestion-actions mt-4">
+            <button class="btn btn-cancel" onclick="closeModal()">Cancelar</button>
+            <button class="btn btn-submit" onclick="applySuggestions()">Aplicar Sugestões</button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -328,16 +397,162 @@
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const contentField = document.querySelector('#id_content');
-    const previewDiv = document.querySelector('#preview');
+    const form = document.getElementById('post-form');
+    const contentField = document.getElementById('id_content');
+    const categoryField = document.querySelector('select[name="category"]');
+    const tagsField = document.querySelector('input[name="tags"]');
     
-    function updatePreview() {
-        const content = contentField.value;
-        previewDiv.innerHTML = marked.parse(content);
+    // Atualiza a pré-visualização quando o conteúdo muda
+    contentField.addEventListener('input', function() {
+        updatePreview();
+    });
+    
+    // Verifica se precisa gerar sugestões ao submeter o formulário
+    form.addEventListener('submit', function(e) {
+        if (!categoryField.value || !tagsField.value) {
+            e.preventDefault(); // Previne o envio do formulário
+            generateSuggestions();
+        }
+    });
+});
+
+function updatePreview() {
+    const content = document.getElementById('id_content').value;
+    const previewContent = document.getElementById('preview-content');
+    previewContent.innerHTML = marked.parse(content);
+}
+
+function generateSuggestions() {
+    const content = document.getElementById('id_content').value;
+    if (!content) {
+        alert('Por favor, adicione algum conteúdo antes de gerar sugestões.');
+        return;
     }
     
-    contentField.addEventListener('input', updatePreview);
-    updatePreview();
-});
+    // Mostra indicador de carregamento
+    const modal = document.getElementById('suggestionsModal');
+    modal.style.display = 'block';
+    modal.querySelector('.modal-content').innerHTML = '<h3 class="mb-4">A gerar sugestões...</h3>';
+    
+    fetch('{% url "blog:suggest_categories_and_tags" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: `content=${encodeURIComponent(content)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        displaySuggestions(data);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erro ao gerar sugestões: ' + error.message);
+        closeModal();
+    });
+}
+
+function displaySuggestions(data) {
+    const modalContent = document.querySelector('.modal-content');
+    modalContent.innerHTML = `
+        <h3 class="mb-4">Sugestões de IA</h3>
+        <div id="categorySuggestions">
+            <h4>Categoria Sugerida:</h4>
+            <div id="categoryList"></div>
+            <div class="custom-input">
+                <input type="text" id="customCategory" class="form-control" placeholder="Ou digite uma nova categoria">
+            </div>
+        </div>
+        <div id="tagSuggestions" class="mt-4">
+            <h4>Etiquetas Sugeridas:</h4>
+            <div id="tagList"></div>
+            <div class="custom-input">
+                <input type="text" id="customTag" class="form-control" placeholder="Ou digite uma nova etiqueta">
+            </div>
+        </div>
+        <div class="suggestion-actions mt-4">
+            <button class="btn btn-cancel" onclick="closeModal()">Cancelar</button>
+            <button class="btn btn-submit" onclick="applySuggestions()">Aplicar Sugestões</button>
+        </div>
+    `;
+    
+    // Mostra sugestões de categoria
+    const categoryList = document.getElementById('categoryList');
+    categoryList.innerHTML = `
+        <div class="suggestion-item" onclick="selectCategory(this)">
+            ${data.category}
+        </div>
+    `;
+    
+    // Mostra sugestões de etiquetas
+    const tagList = document.getElementById('tagList');
+    tagList.innerHTML = data.tags.map(tag => `
+        <div class="suggestion-item" onclick="selectTag(this)">
+            ${tag}
+        </div>
+    `).join('');
+}
+
+function selectCategory(element) {
+    document.querySelectorAll('#categoryList .suggestion-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    element.classList.add('selected');
+}
+
+function selectTag(element) {
+    element.classList.toggle('selected');
+}
+
+function showModal() {
+    document.getElementById('suggestionsModal').style.display = 'block';
+}
+
+function closeModal() {
+    document.getElementById('suggestionsModal').style.display = 'none';
+}
+
+function applySuggestions() {
+    const categoryField = document.querySelector('select[name="category"]');
+    const tagsField = document.querySelector('input[name="tags"]');
+    
+    // Aplica categoria selecionada
+    const selectedCategory = document.querySelector('#categoryList .suggestion-item.selected');
+    const customCategory = document.getElementById('customCategory').value;
+    if (selectedCategory) {
+        categoryField.value = selectedCategory.textContent.trim();
+    } else if (customCategory) {
+        categoryField.value = customCategory;
+    }
+    
+    // Aplica etiquetas selecionadas
+    const selectedTags = Array.from(document.querySelectorAll('#tagList .suggestion-item.selected'))
+        .map(item => item.textContent.trim());
+    const customTag = document.getElementById('customTag').value;
+    
+    let tags = selectedTags;
+    if (customTag) {
+        tags.push(customTag);
+    }
+    
+    if (tags.length > 0) {
+        tagsField.value = tags.join(', ');
+    }
+    
+    closeModal();
+    document.getElementById('post-form').submit();
+}
+
+// Fecha o modal quando clica fora dele
+window.onclick = function(event) {
+    const modal = document.getElementById('suggestionsModal');
+    if (event.target == modal) {
+        closeModal();
+    }
+}
 </script>
 {% endblock %} 
