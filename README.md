@@ -74,6 +74,7 @@ ollama serve
 infantinho2.0/
 ├── backend/
 │   ├── ai_core/          # Módulo de IA
+│   ├── listas_verificacao/ # Módulo de listas de verificação
 │   ├── blog/             # Aplicação principal
 │   ├── infantinho/       # Configurações do projeto
 │   ├── manage.py
@@ -172,4 +173,27 @@ Infantinho 2.0 continuously evolves as a culturally rich, democratic, and dialog
 ---
 
 The Infantinho 2.0 Portal is inspired and informed by extensive research in cooperative education and cultural mediation theories (Vygotsky, Bruner, Johnson & Johnson, Sérgio Niza), augmented with cutting-edge technological practices aimed at shaping a progressive educational landscape for the future.
+
+## Módulos
+
+### Listas de Verificação
+O módulo de Listas de Verificação permite o acompanhamento do progresso dos alunos em diferentes domínios de aprendizagem. Principais funcionalidades:
+
+- Gerenciamento de turmas
+- Dashboard para professores
+- Acompanhamento individual do progresso dos alunos
+- Objetivos de aprendizagem organizados por domínios
+- Sistema de validação de objetivos
+
+#### Funcionalidades para Professores
+- Criar e gerenciar turmas
+- Visualizar progresso dos alunos por domínio
+- Aprovar objetivos concluídos
+- Acompanhar evolução da turma
+
+#### Funcionalidades para Alunos
+- Visualizar objetivos de aprendizagem
+- Marcar status dos objetivos
+- Solicitar avaliação de objetivos
+- Acompanhar progresso individual
 
