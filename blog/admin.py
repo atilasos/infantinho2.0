@@ -31,11 +31,8 @@ class PostAdmin(admin.ModelAdmin):
         (None, {
             'fields': ('title', 'slug', 'author', 'content', 'excerpt')
         }),
-        ('Media', {
-            'fields': ('featured_image',)
-        }),
         ('Organization', {
-            'fields': ('category', 'tags')
+            'fields': ('category', 'tags', 'class_group')
         }),
         ('Publishing', {
             'fields': ('status', 'published_at', 'is_featured')
@@ -47,7 +44,7 @@ class PostAdmin(admin.ModelAdmin):
             'fields': ('allow_comments',)
         }),
         ('Statistics', {
-            'fields': ('views_count', 'likes_count', 'updated_at'),
+            'fields': ('views', 'views_count'),
             'classes': ('collapse',)
         }),
     )
