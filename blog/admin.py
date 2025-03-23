@@ -1,151 +1,44 @@
 from django.contrib import admin
-from django.utils.html import format_html
-from django.urls import path
-from django.shortcuts import redirect
-from django.contrib import messages
-from .models import Category, Post, Comment, PostReaction, UserProfile, Class
+from django.contrib.auth import get_user_model
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.db import transaction
+from django.db.models import ProtectedError
+from .models import Category, Post, Comment, UserProfile, Class, PostReaction
+from django.utils.html import mark_safe
+from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
 from ai_core.services import OllamaService
 from taggit.admin import TagAdmin
 from taggit.models import Tag
+from microsoft_auth.models import MicrosoftProfile
 
+User = get_user_model()
 ollama_service = OllamaService()
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug', 'created_at')
+    list_display = ('name', 'slug', 'created_at', 'updated_at')
     search_fields = ('name', 'description')
     prepopulated_fields = {'slug': ('name',)}
-    ordering = ('name',)
+    date_hierarchy = 'created_at'
+    ordering = ('-created_at',)
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
-    list_display = ('title', 'author', 'category', 'status', 'created_at', 'views_count', 'ai_enhanced_content', 'ai_moderation_status', 'ai_questions')
-    list_filter = ('status', 'category', 'created_at')
+    list_display = ('title', 'author', 'status', 'created_at', 'published_at')
+    list_filter = ('status', 'created_at', 'published_at', 'author')
     search_fields = ('title', 'content')
     prepopulated_fields = {'slug': ('title',)}
-    date_hierarchy = 'created_at'
+    raw_id_fields = ('author',)
+    date_hierarchy = 'published_at'
     ordering = ('-created_at',)
-    filter_horizontal = ('likes', 'dislikes')
-    
-    fieldsets = (
-        (None, {
-            'fields': ('title', 'slug', 'author', 'content', 'excerpt')
-        }),
-        ('Organization', {
-            'fields': ('category', 'tags', 'class_group')
-        }),
-        ('Publishing', {
-            'fields': ('status', 'published_at', 'is_featured')
-        }),
-        ('SEO', {
-            'fields': ('meta_description', 'meta_keywords')
-        }),
-        ('Settings', {
-            'fields': ('allow_comments',)
-        }),
-        ('Statistics', {
-            'fields': ('views', 'views_count'),
-            'classes': ('collapse',)
-        }),
-    )
-
-    def get_urls(self):
-        urls = super().get_urls()
-        custom_urls = [
-            path(
-                '<int:post_id>/enhance/',
-                self.admin_site.admin_view(self.enhance_post),
-                name='post-enhance',
-            ),
-            path(
-                '<int:post_id>/moderate/',
-                self.admin_site.admin_view(self.moderate_post),
-                name='post-moderate',
-            ),
-            path(
-                '<int:post_id>/generate-questions/',
-                self.admin_site.admin_view(self.generate_questions),
-                name='post-generate-questions',
-            ),
-        ]
-        return custom_urls + urls
-
-    def enhance_post(self, request, post_id):
-        post = self.get_object(request, post_id)
-        try:
-            enhanced_content = ollama_service.enhance_content(post.content)
-            post.content = enhanced_content
-            post.save()
-            messages.success(request, 'Conteúdo melhorado com sucesso!')
-        except Exception as e:
-            messages.error(request, f'Erro ao melhorar o conteúdo: {str(e)}')
-        return redirect('admin:blog_post_change', post_id)
-
-    def moderate_post(self, request, post_id):
-        post = self.get_object(request, post_id)
-        try:
-            moderation_result = ollama_service.moderate_content(post.content)
-            if all(moderation_result.values()):
-                messages.success(request, 'Conteúdo aprovado para crianças!')
-            else:
-                messages.warning(request, 'Conteúdo pode precisar de revisão.')
-        except Exception as e:
-            messages.error(request, f'Erro ao moderar o conteúdo: {str(e)}')
-        return redirect('admin:blog_post_change', post_id)
-
-    def generate_questions(self, request, post_id):
-        post = self.get_object(request, post_id)
-        try:
-            questions = ollama_service.generate_reading_questions(post.content)
-            messages.success(request, f'{len(questions)} perguntas geradas com sucesso!')
-        except Exception as e:
-            messages.error(request, f'Erro ao gerar perguntas: {str(e)}')
-        return redirect('admin:blog_post_change', post_id)
-
-    def ai_enhanced_content(self, obj):
-        if hasattr(obj, 'enhancement'):
-            return format_html(
-                '<a class="button" href="{}">Ver conteúdo melhorado</a>',
-                f'/admin/ai_core/contentenhancement/{obj.enhancement.id}/change/'
-            )
-        return format_html(
-            '<a class="button" href="{}">Melhorar conteúdo</a>',
-            f'/admin/blog/post/{obj.id}/enhance/'
-        )
-    ai_enhanced_content.short_description = 'Conteúdo Melhorado'
-
-    def ai_moderation_status(self, obj):
-        if hasattr(obj, 'moderation'):
-            status = '✅ Aprovado' if obj.moderation.is_appropriate else '⚠️ Precisa de revisão'
-            return format_html(
-                '<span style="color: {}">{}</span>',
-                'green' if obj.moderation.is_appropriate else 'orange',
-                status
-            )
-        return format_html(
-            '<a class="button" href="{}">Verificar conteúdo</a>',
-            f'/admin/blog/post/{obj.id}/moderate/'
-        )
-    ai_moderation_status.short_description = 'Status de Moderação'
-
-    def ai_questions(self, obj):
-        if obj.reading_questions.exists():
-            return format_html(
-                '<a class="button" href="{}">Ver perguntas ({})</a>',
-                f'/admin/ai_core/readingquestion/?post__id={obj.id}',
-                obj.reading_questions.count()
-            )
-        return format_html(
-            '<a class="button" href="{}">Gerar perguntas</a>',
-            f'/admin/blog/post/{obj.id}/generate-questions/'
-        )
-    ai_questions.short_description = 'Perguntas de Leitura'
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
     list_display = ('author', 'post', 'created_at', 'active')
-    list_filter = ('active', 'created_at')
+    list_filter = ('active', 'created_at', 'updated_at')
     search_fields = ('content', 'author__username', 'post__title')
+    raw_id_fields = ('author', 'post')
     date_hierarchy = 'created_at'
     ordering = ('-created_at',)
 
@@ -153,7 +46,9 @@ class CommentAdmin(admin.ModelAdmin):
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = ('user', 'user_type', 'created_at')
     list_filter = ('user_type', 'created_at')
-    search_fields = ('user__username', 'user__email', 'bio')
+    search_fields = ('user__username', 'bio')
+    raw_id_fields = ('user',)
+    date_hierarchy = 'created_at'
     ordering = ('-created_at',)
 
 @admin.register(Class)
@@ -161,7 +56,9 @@ class ClassAdmin(admin.ModelAdmin):
     list_display = ('name', 'teacher', 'created_at')
     list_filter = ('created_at',)
     search_fields = ('name', 'teacher__username')
+    raw_id_fields = ('teacher',)
     filter_horizontal = ('students',)
+    date_hierarchy = 'created_at'
     ordering = ('-created_at',)
 
 @admin.register(PostReaction)
@@ -169,5 +66,40 @@ class PostReactionAdmin(admin.ModelAdmin):
     list_display = ('user', 'post', 'reaction', 'created_at')
     list_filter = ('reaction', 'created_at')
     search_fields = ('user__username', 'post__title')
+    raw_id_fields = ('user', 'post')
     date_hierarchy = 'created_at'
     ordering = ('-created_at',)
+
+class CustomUserAdmin(BaseUserAdmin):
+    def delete_model(self, request, obj):
+        try:
+            with transaction.atomic():
+                # Clear many-to-many relationships first
+                obj.classes_enrolled.clear()
+                obj.liked_posts.clear()
+                obj.disliked_posts.clear()
+                obj.turmas_aluno.clear()
+                
+                # Delete related profiles using filter
+                UserProfile.objects.filter(user=obj).delete()
+                MicrosoftProfile.objects.filter(user=obj).delete()
+                
+                # Delete the user last
+                obj.delete()
+        except ProtectedError as e:
+            # Handle protected foreign key error
+            raise ProtectedError(
+                f"Cannot delete user because they have related protected objects: {e.protected_objects}",
+                e.protected_objects
+            )
+        except Exception as e:
+            # Re-raise any other exception
+            raise e
+
+    def delete_queryset(self, request, queryset):
+        for obj in queryset:
+            self.delete_model(request, obj)
+
+# Unregister the default UserAdmin and register our custom one
+admin.site.unregister(User)
+admin.site.register(User, CustomUserAdmin)

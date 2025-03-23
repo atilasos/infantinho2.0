@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Excluir Turma - Infantinho 2.0{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-4">Excluir Turma</h1>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <p class="lead">Tem certeza que deseja excluir a turma "{{ turma.nome }}"?</p>
+            <p class="text-danger">Esta ação não pode ser desfeita.</p>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Excluir
+                    </button>
+                    <a href="{% url 'listas_verificacao:lista_turmas' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

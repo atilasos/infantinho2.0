@@ -2,111 +2,64 @@ import requests
 from typing import Dict, Optional, List
 from django.conf import settings
 from .models import ReadingQuestion, ContentModeration, ContentEnhancement, AISuggestions
-from .adapters import OllamaAdapter
 import os
 import re
 from django.utils.text import slugify
 import json
+from .adapters import OllamaAdapter
 
 class OllamaService:
-    def __init__(self, base_url: str = "http://localhost:11434"):
-        self.base_url = base_url
-        self.model = "gemma3:latest"  # Using Mistral for better Portuguese support
+    def __init__(self):
+        self.adapter = OllamaAdapter()
+        self.base_url = os.getenv('OLLAMA_HOST', 'http://localhost:11434')
+        self.model = os.getenv('OLLAMA_MODEL', 'gemma3')
 
-    def _make_request(self, endpoint: str, data: Dict) -> Dict:
-        """Make a request to the Ollama API."""
-        response = requests.post(f"{self.base_url}{endpoint}", json=data)
-        response.raise_for_status()
-        return response.json()
+    def generate_response(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+        """Gera uma resposta usando o modelo do Ollama"""
+        return self.adapter.generate_response(prompt, system_prompt)
 
     def suggest_title(self, content: str) -> str:
-        """Generate a catchy title for the content."""
+        """Sugere um título para o conteúdo"""
         prompt = f"""
-        Gere um título atraente e adequado para crianças para o seguinte conteúdo.
-        O título deve ser curto, criativo e refletir o tema principal.
+        Gere um título atraente e descritivo para o seguinte conteúdo.
+        O título deve ser curto (máximo 60 caracteres) e adequado para crianças.
         
         Conteúdo:
         {content}
-        
-        Responda apenas com o título sugerido.
         """
         
-        response = self._make_request("/api/generate", {
-            "model": self.model,
-            "prompt": prompt,
-            "stream": False
-        })
-        
-        return response["response"].strip()
+        return self.generate_response(prompt)
 
     def suggest_introduction(self, content: str) -> str:
-        """Generate an engaging introduction for the content."""
+        """Sugere uma introdução para o conteúdo"""
         prompt = f"""
-        Gere uma introdução atraente e adequada para crianças para o seguinte conteúdo.
-        A introdução deve ser curta, envolvente e preparar o leitor para o tema.
+        Gere uma introdução atraente para o seguinte conteúdo.
+        A introdução deve ser curta (2-3 parágrafos) e adequada para crianças.
         
         Conteúdo:
         {content}
-        
-        Responda apenas com a introdução sugerida.
         """
         
-        response = self._make_request("/api/generate", {
-            "model": self.model,
-            "prompt": prompt,
-            "stream": False
-        })
-        
-        return response["response"].strip()
+        return self.generate_response(prompt)
 
     def suggest_article_structure(self, content: str) -> List[Dict]:
-        """Generate a structured outline for the article."""
+        """Sugere uma estrutura para o artigo"""
         prompt = f"""
-        Gere uma estrutura organizada para o seguinte conteúdo.
-        A estrutura deve incluir seções principais e subseções.
+        Analise o seguinte conteúdo e sugira uma estrutura organizada.
+        Retorne a estrutura em formato JSON com a seguinte estrutura:
+        [
+            {{
+                "title": "Título da seção",
+                "description": "Breve descrição do que deve ser abordado",
+                "key_points": ["ponto 1", "ponto 2", ...]
+            }}
+        ]
         
         Conteúdo:
         {content}
-        
-        Formato desejado:
-        - Seção Principal 1
-          - Subseção 1.1
-          - Subseção 1.2
-        - Seção Principal 2
-          - Subseção 2.1
-          - Subseção 2.2
         """
         
-        response = self._make_request("/api/generate", {
-            "model": self.model,
-            "prompt": prompt,
-            "stream": False
-        })
-        
-        # Parse the response into a structured format
-        structure = []
-        current_section = None
-        
-        for line in response["response"].split("\n"):
-            line = line.strip()
-            if not line:
-                continue
-                
-            if line.startswith("- "):
-                if current_section:
-                    structure.append(current_section)
-                current_section = {
-                    "title": line[2:],
-                    "subsections": []
-                }
-            elif line.startswith("  - "):
-                if current_section:
-                    current_section["subsections"].append(line[4:])
-        
-        if current_section:
-            structure.append(current_section)
-            
-        return structure
+        return self.adapter.generate_structured_response(prompt)
 
     def generate_social_summary(self, content: str) -> str:
         """Generate a concise summary suitable for social media."""
@@ -120,190 +73,87 @@ class OllamaService:
         Responda apenas com o resumo e as hashtags.
         """
         
-        response = self._make_request("/api/generate", {
-            "model": self.model,
-            "prompt": prompt,
-            "stream": False
-        })
-        
-        return response["response"].strip()
+        return self.generate_response(prompt)
 
     def enhance_content(self, content: str, target_age: int = 8) -> str:
-        """Enhance content to be more suitable for children."""
+        """Adapta o conteúdo para uma faixa etária específica"""
         prompt = f"""
-        Adapte o seguinte texto para crianças com {target_age} anos de idade.
-        Use linguagem simples, clara e divertida.
-        Mantenha o significado original mas torne-o mais acessível.
+        Adapte o seguinte conteúdo para crianças de {target_age} anos.
+        Use linguagem simples e clara, mantenha as ideias principais,
+        mas simplifique conceitos complexos.
         
-        Texto original:
+        Conteúdo original:
         {content}
         """
         
-        response = self._make_request("/api/generate", {
-            "model": self.model,
-            "prompt": prompt,
-            "stream": False
-        })
-        
-        return response["response"]
+        return self.generate_response(prompt)
 
     def generate_reading_questions(self, content: str, num_questions: int = 3) -> List[Dict]:
-        """Generate reading comprehension questions for the content."""
+        """Gera questões de leitura para o conteúdo"""
         prompt = f"""
-        Gere {num_questions} perguntas de compreensão leitora para o seguinte texto.
-        As perguntas devem ser adequadas para crianças e ajudar a verificar a compreensão.
-        
-        Texto:
-        {content}
-        
-        Formato desejado:
-        - Pergunta
-        - Resposta correta
-        - Dicas para reflexão
-        """
-        
-        response = self._make_request("/api/generate", {
-            "model": self.model,
-            "prompt": prompt,
-            "stream": False
-        })
-        
-        # Parse the response into structured questions
-        questions = []
-        current_question = {}
-        
-        for line in response["response"].split("\n"):
-            if line.startswith("Pergunta:"):
-                if current_question:
-                    questions.append(current_question)
-                current_question = {"question": line.replace("Pergunta:", "").strip()}
-            elif line.startswith("Resposta:"):
-                current_question["answer"] = line.replace("Resposta:", "").strip()
-            elif line.startswith("Dicas:"):
-                current_question["hints"] = line.replace("Dicas:", "").strip()
-        
-        if current_question:
-            questions.append(current_question)
-            
-        return questions
-
-    def moderate_content(self, content: str) -> Dict[str, bool]:
-        """Check if content is appropriate for children."""
-        prompt = f"""
-        Analise o seguinte texto e determine se é apropriado para crianças.
-        Verifique:
-        1. Linguagem apropriada
-        2. Conteúdo educativo
-        3. Ausência de conteúdo prejudicial
-        4. Complexidade adequada
-        
-        Texto:
-        {content}
-        
-        Responda apenas com "SIM" ou "NÃO" para cada critério.
-        """
-        
-        response = self._make_request("/api/generate", {
-            "model": self.model,
-            "prompt": prompt,
-            "stream": False
-        })
-        
-        # Parse the response into a structured format
-        result = {
-            "appropriate_language": "SIM" in response["response"].upper(),
-            "educational_content": "SIM" in response["response"].upper(),
-            "no_harmful_content": "SIM" in response["response"].upper(),
-            "appropriate_complexity": "SIM" in response["response"].upper()
-        }
-        
-        return result
-
-    def suggest_tags(self, content: str) -> List[str]:
-        """Suggest relevant tags for the content."""
-        prompt = f"""
-        Sugira 5 palavras-chave relevantes para o seguinte texto.
-        As palavras devem ser simples e adequadas para crianças.
-        
-        Texto:
-        {content}
-        
-        Responda apenas com as palavras-chave, separadas por vírgula.
-        """
-        
-        response = self._make_request("/api/generate", {
-            "model": self.model,
-            "prompt": prompt,
-            "stream": False
-        })
-        
-        return [tag.strip() for tag in response["response"].split(",")]
-
-    def suggest_categories_and_tags(self, content: str) -> Dict[str, List[str]]:
-        """Generate suggested categories and tags for the content."""
-        prompt = f"""
-        Analise o seguinte conteúdo e sugira:
-        1. Uma categoria principal que melhor descreve o tema
-        2. 5 tags relevantes que ajudam a identificar os subtemas
+        Gere {num_questions} questões de leitura para o seguinte conteúdo.
+        Retorne as questões em formato JSON com a seguinte estrutura:
+        [
+            {{
+                "question": "Texto da questão",
+                "options": ["opção 1", "opção 2", "opção 3", "opção 4"],
+                "correct_answer": 0,
+                "explanation": "Explicação da resposta correta"
+            }}
+        ]
         
         Conteúdo:
         {content}
-        
-        Responda no formato JSON:
-        {{
-            "category": "nome da categoria",
-            "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"]
-        }}
         """
         
-        try:
-            response = self._make_request("/api/generate", {
-                "model": self.model,
-                "prompt": prompt,
-                "stream": False
-            })
-            # Extrai o JSON da resposta
-            json_str = response.get("response", "").strip()
-            
-            # Remove marcadores de código se presentes
-            if json_str.startswith("```json"):
-                json_str = json_str[7:]
-            if json_str.endswith("```"):
-                json_str = json_str[:-4]
-            
-            # Remove espaços em branco extras
-            json_str = json_str.strip()
-            
-            # Tenta fazer o parse do JSON
-            try:
-                suggestions = json.loads(json_str)
-            except json.JSONDecodeError as e:
-                print(f"Erro ao fazer parse do JSON: {str(e)}")
-                print(f"JSON string: {json_str}")
-                raise
-            
-            # Validação básica das sugestões
-            if not isinstance(suggestions, dict):
-                raise ValueError("A resposta não é um dicionário")
-            if 'category' not in suggestions:
-                raise ValueError("A resposta não contém uma categoria")
-            if 'tags' not in suggestions:
-                raise ValueError("A resposta não contém tags")
-            if not suggestions['category']:
-                raise ValueError("A categoria está vazia")
-            if not suggestions['tags']:
-                raise ValueError("As tags estão vazias")
-            
-            # Limpa e valida as tags
-            suggestions['tags'] = [tag.strip() for tag in suggestions['tags'] if tag.strip()]
-            
-            return suggestions
-        except Exception as e:
-            print(f"Erro ao processar sugestões: {str(e)}")
-            return {
-                "category": "Geral",
-                "tags": ["educação", "infância", "aprendizado", "desenvolvimento", "crianças"]
-            }
+        return self.adapter.generate_structured_response(prompt)
+
+    def moderate_content(self, content: str) -> Dict[str, bool]:
+        """Modera o conteúdo para garantir adequação"""
+        prompt = f"""
+        Analise o seguinte conteúdo e verifique se é adequado para crianças.
+        Retorne um JSON com as seguintes verificações:
+        {{
+            "appropriate_language": true/false,
+            "educational_content": true/false,
+            "no_harmful_content": true/false,
+            "appropriate_complexity": true/false
+        }}
+        
+        Conteúdo:
+        {content}
+        """
+        
+        return self.adapter.generate_structured_response(prompt)
+
+    def suggest_tags(self, content: str) -> List[str]:
+        """Sugere tags para o conteúdo"""
+        prompt = f"""
+        Analise o seguinte conteúdo e sugira tags relevantes.
+        Retorne as tags separadas por vírgula.
+        
+        Conteúdo:
+        {content}
+        """
+        
+        response = self.generate_response(prompt)
+        return [tag.strip() for tag in response.split(",")]
+
+    def suggest_categories_and_tags(self, content: str) -> Dict[str, List[str]]:
+        """Sugere categorias e tags para o conteúdo"""
+        prompt = f"""
+        Analise o seguinte conteúdo e sugira categorias e tags relevantes.
+        Retorne um JSON com a seguinte estrutura:
+        {{
+            "categories": ["categoria 1", "categoria 2", ...],
+            "tags": ["tag 1", "tag 2", ...]
+        }}
+        
+        Conteúdo:
+        {content}
+        """
+        
+        return self.adapter.generate_structured_response(prompt)
 
 class AIService:
     def __init__(self):

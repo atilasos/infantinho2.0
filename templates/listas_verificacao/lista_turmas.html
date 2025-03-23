@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Minhas Turmas - Infantinho 2.0{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-4">Minhas Turmas</h1>
+        </div>
+        <div class="col-auto align-self-center">
+            <a href="{% url 'listas_verificacao:criar_turma' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nova Turma
+            </a>
+        </div>
+    </div>
+
+    {% if turmas %}
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for turma in turmas %}
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ turma.nome }}</h5>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                <i class="fas fa-users"></i> {{ turma.alunos.count }} alunos
+                            </small>
+                        </p>
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'listas_verificacao:dashboard_turma' turma.id %}" class="btn btn-primary">
+                                <i class="fas fa-chart-bar"></i> Dashboard
+                            </a>
+                            <a href="{% url 'listas_verificacao:adicionar_aluno' turma.id %}" class="btn btn-success">
+                                <i class="fas fa-user-plus"></i> Adicionar Aluno
+                            </a>
+                            <a href="{% url 'listas_verificacao:editar_turma' turma.id %}" class="btn btn-secondary">
+                                <i class="fas fa-edit"></i> Editar
+                            </a>
+                            <a href="{% url 'listas_verificacao:excluir_turma' turma.id %}" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Excluir
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> Você ainda não tem turmas cadastradas.
+            <a href="{% url 'listas_verificacao:criar_turma' %}" class="alert-link">Criar uma turma</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

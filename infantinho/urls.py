@@ -18,13 +18,19 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import TemplateView, RedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('accounts/', include('allauth.urls')),  # Add this line for authentication URLs
-    path('', include('blog.urls')),  # Make blog the homepage
-    path('ai/', include('ai_core.urls')),  # Adiciona as URLs do módulo de IA
-    path('listas/', include('listas_verificacao.urls')),  # Add URLs for learning checklists
+    path('microsoft/', include('microsoft_auth.urls', namespace='microsoft')),
+    path('pages/', include('django.contrib.flatpages.urls')),
+    path('', include('blog.urls', namespace='blog')),
+    path('ai/', include('ai_core.urls', namespace='ai_core')),
+    path('checklists/', include('listas_verificacao.urls')),  # Learning checklists URLs
+    
+    # Redirecionamentos para autenticação Microsoft
+    path('accounts/login/', RedirectView.as_view(url='/microsoft/to-auth-redirect/', permanent=False), name='login'),
+    path('accounts/signup/', RedirectView.as_view(url='/microsoft/to-auth-redirect/', permanent=False), name='signup'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)  # Serve media files in development
 
 if settings.DEBUG:

@@ -13,64 +13,44 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
     <!-- Custom CSS -->
+    <link href="{% static 'css/style.css' %}" rel="stylesheet">
+    
+    {% block extra_css %}{% endblock %}
+    
     <style>
         :root {
             --primary-color: #4CAF50;
-            --secondary-color: #2196F3;
-            --accent-color: #FFC107;
-            --text-color: #333;
-            --light-bg: #f8f9fa;
+            --secondary-color: #45A29E;
+            --accent-color: #FFE66D;
+            --background-color: #F5F5F5;
+            --text-color: #333333;
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-color);
             color: var(--text-color);
-            line-height: 1.6;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
         .navbar {
-            background-color: var(--primary-color);
+            background-color: white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
         .navbar-brand {
-            color: white !important;
+            color: var(--primary-color) !important;
             font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            font-size: 1.5rem;
         }
         
         .nav-link {
-            color: rgba(255,255,255,0.95) !important;
+            color: var(--text-color) !important;
             font-weight: 500;
             transition: color 0.3s ease;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
         }
         
         .nav-link:hover {
-            color: white !important;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-        }
-        
-        .navbar .form-control {
-            background-color: rgba(255,255,255,0.9);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: var(--text-color);
-        }
-        
-        .navbar .form-control:focus {
-            background-color: white;
-            border-color: white;
-            box-shadow: 0 0 0 0.2rem rgba(255,255,255,0.25);
-        }
-        
-        .navbar .btn-outline-light {
-            border-color: rgba(255,255,255,0.5);
-            color: white;
-        }
-        
-        .navbar .btn-outline-light:hover {
-            background-color: rgba(255,255,255,0.1);
-            border-color: white;
+            color: var(--primary-color) !important;
         }
         
         .btn-primary {
@@ -79,44 +59,70 @@
         }
         
         .btn-primary:hover {
-            background-color: #388E3C;
-            border-color: #388E3C;
-        }
-        
-        .card {
-            border: none;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-        }
-        
-        .card:hover {
-            transform: translateY(-5px);
+            background-color: #3d8b40;
+            border-color: #3d8b40;
         }
         
         .footer {
-            background-color: var(--light-bg);
+            background-color: white;
             padding: 2rem 0;
             margin-top: 3rem;
+            box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .footer-title {
+            color: var(--primary-color);
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .footer-links li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .footer-links a {
+            color: var(--text-color);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        .footer-links a:hover {
+            color: var(--primary-color);
+        }
+        
+        .social-links {
+            font-size: 1.5rem;
         }
         
         .social-links a {
             color: var(--text-color);
-            margin: 0 10px;
+            margin-right: 1rem;
             transition: color 0.3s ease;
         }
         
         .social-links a:hover {
             color: var(--primary-color);
         }
+        
+        .copyright {
+            font-size: 0.9rem;
+            color: #666;
+        }
     </style>
-    
-    {% block extra_css %}{% endblock %}
 </head>
 <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+    <nav class="navbar navbar-expand-lg navbar-light sticky-top">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'blog:post_list' %}">Infantinho 2.0</a>
+            <a class="navbar-brand" href="{% url 'blog:post_list' %}">
+                <img src="{% static 'images/logo.png' %}" alt="Logo" height="30" class="d-inline-block align-text-top me-2">
+                Infantinho 2.0
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -131,64 +137,61 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'blog:tag_list' %}">Tags</a>
                     </li>
+                    {% if user.is_authenticated %}
+                        {% if user.profile.user_type == 'teacher' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'listas_verificacao:dashboard_professor' %}">Dashboard</a>
+                        </li>
+                        {% elif user.profile.user_type == 'student' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'listas_verificacao:lista_aluno' %}">Minhas Aprendizagens</a>
+                        </li>
+                        {% endif %}
+                    {% endif %}
                 </ul>
-                <form class="d-flex me-3" action="{% url 'blog:search' %}" method="get">
-                    <input class="form-control me-2" type="search" name="q" placeholder="Buscar...">
-                    <button class="btn btn-outline-light" type="submit">Buscar</button>
-                </form>
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                                <img src="{% if user.profile.avatar %}{{ user.profile.avatar.url }}{% else %}{% static 'images/default-avatar.png' %}{% endif %}" 
-                                     alt="Avatar" class="rounded-circle me-2" style="width: 24px; height: 24px; object-fit: cover;">
-                                {{ user.username }}
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="{% url 'blog:my_posts' %}">Meus Posts</a></li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <img src="{% if user.profile.avatar %}{{ user.profile.avatar.url }}{% else %}{% static 'images/default-avatar.png' %}{% endif %}" 
+                                 alt="Avatar" class="rounded-circle me-2" style="width: 24px; height: 24px; object-fit: cover;">
+                            {{ user.get_full_name|default:user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            {% if user.profile.user_type == 'teacher' %}
                                 <li><a class="dropdown-item" href="{% url 'blog:post_create' %}">Novo Post</a></li>
-                                {% if user.profile.user_type in 'admin,teacher' %}
-                                    <li><a class="dropdown-item" href="{% url 'blog:pending_posts' %}">Posts Pendentes</a></li>
-                                {% endif %}
-                                <li><hr class="dropdown-divider"></li>
-                                {% if user.profile.user_type == 'teacher' %}
-                                    <li><a class="dropdown-item" href="{% url 'listas_verificacao:lista_turmas' %}">Minhas Turmas</a></li>
-                                    <li><a class="dropdown-item" href="{% url 'listas_verificacao:dashboard_professor' %}">Dashboard Professor</a></li>
-                                {% endif %}
-                                {% if user.profile.user_type == 'student' %}
-                                    <li><a class="dropdown-item" href="{% url 'listas_verificacao:lista_aluno' %}">Minhas Listas</a></li>
-                                {% endif %}
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{% url 'account_logout' %}">Sair</a></li>
-                            </ul>
-                        </li>
+                                <li><a class="dropdown-item" href="{% url 'listas_verificacao:lista_turmas' %}">Gerenciar Turmas</a></li>
+                            {% elif user.profile.user_type == 'student' %}
+                                <li><a class="dropdown-item" href="{% url 'listas_verificacao:lista_aluno' %}">Minhas Aprendizagens</a></li>
+                            {% endif %}
+                            <li><a class="dropdown-item" href="{% url 'blog:profile' %}">Meu Perfil</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'microsoft:logout' %}">Sair</a></li>
+                        </ul>
+                    </li>
                     {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'account_login' %}">Entrar</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'account_signup' %}">Registrar</a>
-                        </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'login' %}">Entrar</a>
+                    </li>
                     {% endif %}
                 </ul>
             </div>
         </div>
     </nav>
 
-    <!-- Messages -->
-    {% if messages %}
-        <div class="container mb-4">
+    <!-- Main Content -->
+    <main class="container py-4">
+        {% if messages %}
+        <div class="messages">
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
             {% endfor %}
         </div>
-    {% endif %}
-
-    <!-- Main Content -->
-    <main class="container mb-5">
+        {% endif %}
+        
         {% block content %}{% endblock %}
     </main>
 
@@ -196,39 +199,49 @@
     <footer class="footer">
         <div class="container">
             <div class="row">
-                <div class="col-md-4">
-                    <h5>Sobre o Infantinho 2.0</h5>
-                    <p>Portal educativo baseado em Django com funcionalidades de IA para aprendizagem cooperativa.</p>
+                <div class="col-md-4 mb-4">
+                    <h5 class="footer-title">Sobre o Infantinho 2.0</h5>
+                    <p>Uma plataforma educacional inovadora que combina tecnologia e pedagogia para criar experiências de aprendizado significativas.</p>
                 </div>
-                <div class="col-md-4">
-                    <h5>Links Rápidos</h5>
-                    <ul class="list-unstyled">
+                <div class="col-md-4 mb-4">
+                    <h5 class="footer-title">Links Úteis</h5>
+                    <ul class="footer-links">
                         <li><a href="{% url 'blog:post_list' %}">Blog</a></li>
                         <li><a href="{% url 'blog:category_list' %}">Categorias</a></li>
                         <li><a href="{% url 'blog:tag_list' %}">Tags</a></li>
+                        {% if user.is_authenticated %}
+                            {% if user.profile.user_type == 'teacher' %}
+                            <li><a href="{% url 'listas_verificacao:dashboard_professor' %}">Dashboard do Professor</a></li>
+                            {% elif user.profile.user_type == 'student' %}
+                            <li><a href="{% url 'listas_verificacao:lista_aluno' %}">Minhas Aprendizagens</a></li>
+                            {% endif %}
+                        {% endif %}
+                        <li><a href="#">Política de Privacidade</a></li>
+                        <li><a href="#">Termos de Uso</a></li>
                     </ul>
                 </div>
-                <div class="col-md-4">
-                    <h5>Redes Sociais</h5>
-                    <div class="social-links">
+                <div class="col-md-4 mb-4">
+                    <h5 class="footer-title">Contato</h5>
+                    <ul class="footer-links">
+                        <li><i class="fas fa-envelope"></i> contato@infantinho.com</li>
+                        <li><i class="fas fa-phone"></i> (11) 1234-5678</li>
+                    </ul>
+                    <div class="social-links mt-3">
                         <a href="#"><i class="fab fa-facebook"></i></a>
-                        <a href="#"><i class="fab fa-twitter"></i></a>
                         <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
                     </div>
                 </div>
             </div>
             <hr>
             <div class="text-center">
-                <p>&copy; {% now "Y" %} Infantinho 2.0. Todos os direitos reservados.</p>
+                <p class="copyright">&copy; 2024 Infantinho 2.0. Todos os direitos reservados.</p>
             </div>
         </div>
     </footer>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Custom JS -->
     {% block extra_js %}{% endblock %}
 </body>
 </html> 

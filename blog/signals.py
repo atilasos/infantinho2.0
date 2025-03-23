@@ -9,11 +9,9 @@ User = get_user_model()
 def create_user_profile(sender, instance, created, **kwargs):
     """Create a UserProfile for every new user."""
     if created:
-        UserProfile.objects.create(user=instance)
+        UserProfile.objects.get_or_create(user=instance)
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
     """Save the UserProfile whenever the user is saved."""
-    if not hasattr(instance, 'profile'):
-        UserProfile.objects.create(user=instance)
-    instance.profile.save() 
+    UserProfile.objects.get_or_create(user=instance) 

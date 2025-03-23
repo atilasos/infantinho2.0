@@ -5,6 +5,8 @@ register = template.Library()
 @register.filter
 def get_item(dictionary, key):
     """Retorna um item de um dicionário usando a chave fornecida."""
+    if not isinstance(dictionary, dict):
+        return None
     return dictionary.get(key)
 
 @register.filter
@@ -17,8 +19,11 @@ def filter_validados(status_map, dominio):
 def div(value, arg):
     """Divide the value by the argument"""
     try:
+        # Se value for uma lista, calcular a soma dos valores
+        if isinstance(value, list):
+            value = sum(float(x) for x in value if x is not None)
         return float(value) / float(arg)
-    except (ValueError, ZeroDivisionError):
+    except (ValueError, ZeroDivisionError, TypeError):
         return 0
 
 @register.filter

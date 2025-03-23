@@ -1,99 +1,69 @@
-from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
-from django.contrib.auth import get_user_model
-from django.contrib.auth.models import User
+from typing import Dict, List, Optional
 import requests
+from django.conf import settings
 import json
-from typing import Dict, Any, Optional, Generator
-
-class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
-    def populate_user(self, request, sociallogin, data):
-        user = super().populate_user(request, sociallogin, data)
-        if not user.email:
-            user.email = data.get('email')
-        return user
-
-    def save_user(self, request, sociallogin, form=None):
-        user = super().save_user(request, sociallogin, form)
-        if not user.email:
-            user.email = sociallogin.account.extra_data.get('email')
-            user.save()
-        return user
-
-    def pre_social_login(self, request, sociallogin):
-        if sociallogin.is_existing:
-            return
-
-        if 'email' not in sociallogin.account.extra_data:
-            return
-
-        try:
-            user = User.objects.get(email=sociallogin.account.extra_data['email'])
-            sociallogin.connect(request, user)
-        except User.DoesNotExist:
-            pass
 
 class OllamaAdapter:
-    def __init__(self, model_name: str = "gemma3:latest"):
-        self.model_name = model_name
-        self.base_url = "http://localhost:11434/api/generate"
+    """Adapter para interagir com a API do Ollama"""
     
-    def generate(self, prompt: str) -> Dict[str, Any]:
-        """Gera uma resposta usando o modelo Ollama."""
-        try:
-            response = requests.post(
-                self.base_url,
-                json={
-                    "model": self.model_name,
-                    "prompt": prompt,
-                    "stream": False,
-                    "format": "json"  # Solicita resposta em formato JSON
-                }
-            )
-            response.raise_for_status()
-            
-            # Tenta extrair o JSON da resposta
-            try:
-                result = response.json()
-                if "response" in result:
-                    # Tenta fazer o parse do JSON na resposta
-                    try:
-                        return json.loads(result["response"])
-                    except json.JSONDecodeError:
-                        # Se não conseguir fazer o parse, retorna a resposta como texto
-                        return {"response": result["response"]}
-                return result
-            except json.JSONDecodeError:
-                return {"error": "Resposta inválida do modelo"}
-                
-        except requests.exceptions.RequestException as e:
-            return {"error": f"Erro ao comunicar com o Ollama: {str(e)}"}
-        except Exception as e:
-            return {"error": f"Erro inesperado: {str(e)}"}
+    def __init__(self, base_url: str = None, model: str = None):
+        self.base_url = base_url or settings.OLLAMA_HOST
+        self.model = model or settings.OLLAMA_MODEL
+        
+    def _make_request(self, endpoint: str, data: Dict) -> Dict:
+        """Faz uma requisição para a API do Ollama"""
+        response = requests.post(f"{self.base_url}{endpoint}", json=data)
+        response.raise_for_status()
+        return response.json()
     
-    def generate_stream(self, prompt: str) -> Generator[str, None, None]:
-        """Gera uma resposta em streaming usando o modelo Ollama."""
-        try:
-            response = requests.post(
-                self.base_url,
-                json={
-                    "model": self.model_name,
-                    "prompt": prompt,
-                    "stream": True
-                },
-                stream=True
-            )
-            response.raise_for_status()
+    def generate_response(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+        """Gera uma resposta usando o modelo do Ollama"""
+        data = {
+            "model": self.model,
+            "prompt": prompt,
+            "stream": False
+        }
+        
+        if system_prompt:
+            data["system"] = system_prompt
             
-            for line in response.iter_lines():
-                if line:
-                    try:
-                        chunk = json.loads(line)
-                        if "response" in chunk:
-                            yield chunk["response"]
-                    except json.JSONDecodeError:
-                        continue
-                        
+        try:
+            response = self._make_request("/api/generate", data)
+            return response.get("response", "").strip()
         except requests.exceptions.RequestException as e:
-            yield f"Erro ao comunicar com o Ollama: {str(e)}"
-        except Exception as e:
-            yield f"Erro inesperado: {str(e)}" 
+            print(f"Erro ao chamar API do Ollama: {e}")
+            return "Desculpe, ocorreu um erro ao processar sua solicitação."
+    
+    def generate_structured_response(self, prompt: str, system_prompt: Optional[str] = None) -> Dict:
+        """Gera uma resposta estruturada (JSON) usando o modelo do Ollama"""
+        data = {
+            "model": self.model,
+            "prompt": prompt,
+            "stream": False,
+            "format": "json"
+        }
+        
+        if system_prompt:
+            data["system"] = system_prompt
+            
+        try:
+            response = self._make_request("/api/generate", data)
+            response_text = response.get("response", "").strip()
+            return json.loads(response_text)
+        except (requests.exceptions.RequestException, json.JSONDecodeError) as e:
+            print(f"Erro ao gerar resposta estruturada: {e}")
+            return {}
+    
+    def generate_embeddings(self, text: str) -> List[float]:
+        """Gera embeddings para um texto usando o modelo do Ollama"""
+        data = {
+            "model": self.model,
+            "prompt": text
+        }
+        
+        try:
+            response = self._make_request("/api/embeddings", data)
+            return response.get("embedding", [])
+        except requests.exceptions.RequestException as e:
+            print(f"Erro ao gerar embeddings: {e}")
+            return [] 

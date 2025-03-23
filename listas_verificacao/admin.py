@@ -1,29 +1,39 @@
 from django.contrib import admin
-from .models import DominioAprendizagem, ObjetivoAprendizagem, StatusObjetivo, RegistroAvaliacao
+from .models import ListaVerificacao, Objetivo, Turma, ProgressoAluno
 
-@admin.register(DominioAprendizagem)
-class DominioAprendizagemAdmin(admin.ModelAdmin):
-    list_display = ('codigo', 'nome')
-    search_fields = ('codigo', 'nome')
-    ordering = ('codigo',)
+@admin.register(ListaVerificacao)
+class ListaVerificacaoAdmin(admin.ModelAdmin):
+    list_display = ('titulo', 'turma', 'data_criacao', 'data_atualizacao')
+    list_filter = ('turma', 'data_criacao')
+    search_fields = ('titulo', 'descricao')
+    date_hierarchy = 'data_criacao'
 
-@admin.register(ObjetivoAprendizagem)
-class ObjetivoAprendizagemAdmin(admin.ModelAdmin):
-    list_display = ('codigo', 'dominio', 'ano_escolar', 'disciplina', 'ordem')
-    list_filter = ('dominio', 'ano_escolar', 'disciplina')
-    search_fields = ('codigo', 'descricao')
-    ordering = ('dominio', 'ordem')
+@admin.register(Objetivo)
+class ObjetivoAdmin(admin.ModelAdmin):
+    list_display = ('titulo', 'lista_verificacao', 'ordem')
+    list_filter = ('lista_verificacao',)
+    search_fields = ('titulo', 'descricao')
+    ordering = ('lista_verificacao', 'ordem')
 
-@admin.register(StatusObjetivo)
-class StatusObjetivoAdmin(admin.ModelAdmin):
-    list_display = ('aluno', 'objetivo', 'status', 'data_atualizacao', 'validado_por')
-    list_filter = ('status', 'objetivo__dominio', 'objetivo__ano_escolar', 'validado_por')
-    search_fields = ('aluno__username', 'objetivo__codigo', 'objetivo__descricao')
-    ordering = ('-data_atualizacao',)
+@admin.register(Turma)
+class TurmaAdmin(admin.ModelAdmin):
+    list_display = ('nome', 'professor', 'get_alunos_count', 'data_criacao')
+    list_filter = ('professor', 'data_criacao')
+    search_fields = ('nome', 'professor__username', 'professor__first_name', 'professor__last_name')
+    filter_horizontal = ('alunos',)
+    date_hierarchy = 'data_criacao'
+    
+    def get_alunos_count(self, obj):
+        return obj.alunos.count()
+    get_alunos_count.short_description = 'Número de Alunos'
 
-@admin.register(RegistroAvaliacao)
-class RegistroAvaliacaoAdmin(admin.ModelAdmin):
-    list_display = ('status_objetivo', 'avaliador', 'resultado', 'data_avaliacao')
-    list_filter = ('resultado', 'avaliador', 'data_avaliacao')
-    search_fields = ('status_objetivo__aluno__username', 'status_objetivo__objetivo__codigo')
-    ordering = ('-data_avaliacao',)
+@admin.register(ProgressoAluno)
+class ProgressoAlunoAdmin(admin.ModelAdmin):
+    list_display = ('aluno', 'lista_verificacao', 'get_porcentagem_conclusao', 'data_atualizacao')
+    list_filter = ('aluno', 'lista_verificacao', 'data_atualizacao')
+    search_fields = ('aluno__username', 'aluno__first_name', 'aluno__last_name', 'lista_verificacao__titulo')
+    date_hierarchy = 'data_atualizacao'
+    
+    def get_porcentagem_conclusao(self, obj):
+        return f'{obj.porcentagem_conclusao:.1f}%'
+    get_porcentagem_conclusao.short_description = 'Progresso'

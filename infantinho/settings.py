@@ -30,7 +30,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
 
 
 # Application definition
@@ -52,14 +52,11 @@ INSTALLED_APPS = [
     'blog',
     'ai_core',
     'frontend',
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.microsoft',
-    'taggit',
+    'microsoft_auth',
     'crispy_forms',
     'crispy_bootstrap5',
     'listas_verificacao',
+    'taggit',
 ]
 
 MIDDLEWARE = [
@@ -70,7 +67,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'infantinho.urls'
@@ -87,6 +83,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.media',
+                'microsoft_auth.context_processors.microsoft',
             ],
         },
     },
@@ -166,7 +163,7 @@ SITE_ID = 1
 # Login/Logout URLs
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
-LOGIN_URL = '/accounts/login/'
+LOGIN_URL = '/microsoft/to-auth-redirect/'
 
 # Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -186,48 +183,25 @@ CACHES = {
 
 # Authentication Backend settings
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
+    'microsoft_auth.backends.MicrosoftAuthenticationBackend',
+    'django.contrib.auth.backends.ModelBackend'
 ]
 
-# django-allauth settings
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
-ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
-ACCOUNT_EMAIL_VERIFICATION = 'none'
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'http'
-ACCOUNT_USER_MODEL_USERNAME_FIELD = None
-ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
-ACCOUNT_LOGOUT_ON_GET = True
-ACCOUNT_LOGOUT_REDIRECT_URL = '/'
-
-# Allow social accounts to connect to existing accounts
-SOCIALACCOUNT_AUTO_SIGNUP = True
-SOCIALACCOUNT_EMAIL_REQUIRED = True
-SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
-SOCIALACCOUNT_LOGIN_ON_GET = True
-SOCIALACCOUNT_ADAPTER = 'ai_core.adapters.CustomSocialAccountAdapter'
-SOCIALACCOUNT_STORE_TOKENS = True
-SOCIALACCOUNT_QUERY_EMAIL = True
-SOCIALACCOUNT_PROVIDERS = {
-    'microsoft': {
-        'APP': {
-            'client_id': os.getenv('MICROSOFT_CLIENT_ID'),
-            'secret': os.getenv('MICROSOFT_SECRET'),
-            'key': ''
-        },
-        'SCOPE': ['User.Read'],
-        'AUTH_PARAMS': {'prompt': 'select_account'},
-    }
-}
-
 # CSRF settings
-CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:8000,http://127.0.0.1:8000').split(',')
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',
+    'https://login.microsoftonline.com',
+    'https://login.microsoft.com'
+]
 
 # Ollama settings
 OLLAMA_HOST = os.getenv('OLLAMA_HOST', 'http://localhost:11434')
 OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'gemma3')
+
+# Configurações do Microsoft Auth
+MICROSOFT_AUTH_CLIENT_ID = os.environ.get('MICROSOFT_CLIENT_ID')
+MICROSOFT_AUTH_CLIENT_SECRET = os.environ.get('MICROSOFT_SECRET')
+MICROSOFT_AUTH_LOGIN_TYPE = 'ma'  # Microsoft authentication (inclui Microsoft Accounts, Office 365 Enterprise e Azure AD)
 
 # Crispy Forms
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"

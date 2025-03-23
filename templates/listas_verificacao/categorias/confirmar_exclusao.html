@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Excluir Categoria{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Confirmar Exclusão</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        Tem certeza que deseja excluir a categoria "{{ categoria.nome }}"?
+                        Esta ação não pode ser desfeita.
+                    </p>
+                    
+                    {% if categoria.objetivos.exists %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Esta categoria possui {{ categoria.objetivos.count }} objetivo(s) associado(s).
+                            Ao excluir a categoria, todos os objetivos associados serão excluídos também.
+                        </div>
+                    {% endif %}
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'listas_verificacao:gerenciar_categorias' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Excluir
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

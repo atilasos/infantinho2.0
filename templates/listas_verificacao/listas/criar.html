@@ -1,0 +1,71 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <h2>{{ titulo }}</h2>
+            
+            <div class="card">
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% for field in form %}
+                            <div class="mb-3">
+                                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                                {{ field.errors }}
+                                {{ field }}
+                                {% if field.help_text %}
+                                    <div class="form-text">{{ field.help_text }}</div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                        
+                        <div class="d-flex justify-content-between">
+                            <button type="submit" class="btn btn-primary">
+                                {% if lista %}
+                                    Atualizar Lista
+                                {% else %}
+                                    Criar Lista
+                                {% endif %}
+                            </button>
+                            {% if lista %}
+                                <a href="{% url 'listas_verificacao:dashboard_turma' lista.turma.id %}" class="btn btn-secondary">
+                                    Cancelar
+                                </a>
+                            {% else %}
+                                <a href="{% url 'listas_verificacao:dashboard_professor' %}" class="btn btn-secondary">
+                                    Cancelar
+                                </a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Informações</h5>
+                    <p class="card-text">
+                        Ao criar ou editar uma lista de verificação, você pode:
+                    </p>
+                    <ul>
+                        <li>Definir um título claro para a lista</li>
+                        <li>Adicionar uma descrição detalhada</li>
+                        <li>Associar a lista a uma turma específica</li>
+                        <li>Selecionar os objetivos predefinidos que farão parte da lista</li>
+                    </ul>
+                    <p class="card-text">
+                        Os objetivos selecionados serão exibidos para os alunos na ordem definida,
+                        e eles poderão marcar seu progresso em cada um deles.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

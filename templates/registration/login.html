@@ -1,0 +1,46 @@
+{% extends "blog/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title text-center mb-4">Login</h2>
+                    
+                    {% if messages %}
+                    <div class="messages">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    {% if microsoft_login_enabled %}
+                    <div class="text-center">
+                        <a href="{% url 'microsoft:to-auth-redirect' %}" class="btn btn-primary btn-lg">
+                            <i class="fab fa-microsoft me-2"></i>
+                            Entrar com Microsoft
+                        </a>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        Login com Microsoft não está configurado.
+                    </div>
+                    {% endif %}
+
+                    {% if user.is_authenticated %}
+                    <div class="mt-4 text-center">
+                        <p>Você já está logado como {{ user.email }}</p>
+                        <a href="{% url 'logout' %}" class="btn btn-outline-danger">Sair</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

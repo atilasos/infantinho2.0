@@ -9,6 +9,8 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.utils.html import mark_safe
 from django.conf import settings
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from taggit.managers import TaggableManager
 
 User = get_user_model()
@@ -53,6 +55,20 @@ class UserProfile(models.Model):
     class Meta:
         verbose_name = 'Perfil de Utilizador'
         verbose_name_plural = 'Perfis de Utilizadores'
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    """Cria um perfil de usuário quando um novo usuário é criado"""
+    if created:
+        UserProfile.objects.create(user=instance)
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    """Salva o perfil do usuário quando o usuário é salvo"""
+    try:
+        instance.profile.save()
+    except UserProfile.DoesNotExist:
+        UserProfile.objects.create(user=instance)
 
 class Class(models.Model):
     name = models.CharField(max_length=100)

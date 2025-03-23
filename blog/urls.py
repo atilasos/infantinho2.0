@@ -39,4 +39,7 @@ urlpatterns = [
     
     # New URL for suggest_categories_and_tags
     path('suggest-categories-tags/', views.suggest_categories_and_tags, name='suggest_categories_and_tags'),
+    
+    # Profile view
+    path('profile/', views.profile, name='profile'),
 ] 

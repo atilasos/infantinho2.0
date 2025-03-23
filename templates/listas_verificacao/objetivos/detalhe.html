@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ objetivo.codigo }} - {{ objetivo.descricao|truncatewords:5 }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>{{ objetivo.codigo }}</h1>
+            <p class="lead">{{ objetivo.descricao }}</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'listas_verificacao:lista_aluno' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+
+    <!-- Status Atual -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2 class="h5 mb-0">Status Atual</h2>
+        </div>
+        <div class="card-body">
+            {% if status %}
+                <span class="badge {% if status.status == 'validado' %}bg-success
+                             {% elif status.status == 'concluido' %}bg-info
+                             {% elif status.status == 'em_progresso' %}bg-warning
+                             {% else %}bg-secondary{% endif %}">
+                    {{ status.get_status_display }}
+                </span>
+                <p class="text-muted mt-2">
+                    Última atualização: {{ status.data_atualizacao|date:"d/m/Y H:i" }}
+                </p>
+            {% else %}
+                <span class="badge bg-secondary">Não Iniciado</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Formulário de Atualização de Status -->
+    {% if request.user.profile.user_type == 'student' %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2 class="h5 mb-0">Atualizar Status</h2>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{% url 'listas_verificacao:atualizar_status' objetivo.id %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">Selecione o novo status:</label>
+                    <select name="status" class="form-select">
+                        <option value="nao_iniciado" {% if status.status == 'nao_iniciado' %}selected{% endif %}>
+                            Não Iniciado
+                        </option>
+                        <option value="em_progresso" {% if status.status == 'em_progresso' %}selected{% endif %}>
+                            Em Progresso
+                        </option>
+                        <option value="concluido" {% if status.status == 'concluido' %}selected{% endif %}>
+                            Concluído
+                        </option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Atualizar Status
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Histórico de Avaliações -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="h5 mb-0">Histórico de Avaliações</h2>
+        </div>
+        <div class="card-body">
+            {% if avaliacoes %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Avaliador</th>
+                                <th>Resultado</th>
+                                <th>Comentários</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for avaliacao in avaliacoes %}
+                                <tr>
+                                    <td>{{ avaliacao.data_avaliacao|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ avaliacao.avaliador.get_full_name|default:avaliacao.avaliador.username }}</td>
+                                    <td>
+                                        {% if avaliacao.resultado %}
+                                            <span class="badge bg-success">Aprovado</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Reprovado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ avaliacao.comentarios|default:"-" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted mb-0">Nenhuma avaliação registrada.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

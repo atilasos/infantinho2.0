@@ -67,7 +67,7 @@ def post_list(request):
         'tag_slug': tag_slug,
         'featured_authors': featured_authors,
     }
-    return render(request, 'blog/post_list.html', context)
+    return render(request, 'blog/post/post_list.html', context)
 
 def post_detail(request, slug):
     """Display a single blog post with its comments."""
@@ -578,3 +578,31 @@ def suggest_categories_and_tags(request):
                 return JsonResponse({'error': str(e)}, status=500)
         return JsonResponse({'error': 'No content provided'}, status=400)
     return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+@login_required
+def profile(request):
+    """View para exibir e editar o perfil do usuário."""
+    if request.method == 'POST':
+        # Atualizar perfil
+        user = request.user
+        user.first_name = request.POST.get('first_name')
+        user.last_name = request.POST.get('last_name')
+        user.email = request.POST.get('email')
+        user.save()
+        
+        # Atualizar UserProfile
+        profile = user.profile
+        profile.bio = request.POST.get('bio')
+        if 'avatar' in request.FILES:
+            profile.avatar = request.FILES['avatar']
+        profile.save()
+        
+        messages.success(request, 'Perfil atualizado com sucesso!')
+        return redirect('blog:profile')
+    
+    context = {
+        'user': request.user,
+        'profile': request.user.profile,
+        'posts': Post.objects.filter(author=request.user).order_by('-created_at'),
+    }
+    return render(request, 'blog/profile.html', context)
