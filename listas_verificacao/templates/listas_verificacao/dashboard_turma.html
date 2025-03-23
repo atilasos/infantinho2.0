@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load listas_filters %}
+
+{% block title %}Dashboard - {{ turma.nome }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>Dashboard da Turma</h1>
+            <p class="lead">{{ turma.nome }} - {{ turma.ano_escolar }}º ano - {{ turma.disciplina }}</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'listas_verificacao:lista_turmas' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+
+    {% if not tem_alunos %}
+        <div class="alert alert-info">
+            <p class="mb-0">
+                <i class="fas fa-info-circle"></i> 
+                Esta turma ainda não possui alunos. 
+                <a href="{% url 'listas_verificacao:gerenciar_turma' turma.id %}" class="alert-link">
+                    Clique aqui para adicionar alunos à turma.
+                </a>
+            </p>
+        </div>
+    {% else %}
+        <!-- Progresso por Domínio -->
+        <div class="row mb-4">
+            <div class="col">
+                <h2>Progresso por Domínio</h2>
+            </div>
+        </div>
+
+        <div class="row">
+            {% for dominio in dominios %}
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">{{ dominio.nome }}</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Aluno</th>
+                                            <th>Progresso</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for aluno in turma.alunos.all %}
+                                            {% with progresso=progresso_alunos|get_item:aluno.id|get_item:dominio.codigo %}
+                                                <tr>
+                                                    <td>{{ aluno.get_full_name|default:aluno.username }}</td>
+                                                    <td>
+                                                        <div class="progress">
+                                                            <div class="progress-bar" role="progressbar" 
+                                                                 style="width: {{ progresso.percentual }}%"
+                                                                 aria-valuenow="{{ progresso.percentual }}" 
+                                                                 aria-valuemin="0" 
+                                                                 aria-valuemax="100">
+                                                                {{ progresso.validados }}/{{ progresso.total }}
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        {% if progresso.percentual == 100 %}
+                                                            <span class="badge bg-success">Concluído</span>
+                                                        {% elif progresso.percentual > 0 %}
+                                                            <span class="badge bg-warning">Em Progresso</span>
+                                                        {% else %}
+                                                            <span class="badge bg-secondary">Não Iniciado</span>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                            {% endwith %}
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Resumo Geral -->
+        <div class="row mb-4">
+            <div class="col">
+                <h2>Resumo Geral</h2>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Aluno</th>
+                                        <th>Progresso Geral</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for aluno in turma.alunos.all %}
+                                        {% with media=0 %}
+                                            {% for dominio in dominios %}
+                                                {% with progresso=progresso_alunos|get_item:aluno.id|get_item:dominio.codigo %}
+                                                    {% with media=media|add:progresso.percentual %}{% endwith %}
+                                                {% endwith %}
+                                            {% endfor %}
+                                            {% with media=media|div:dominios.count %}
+                                                <tr>
+                                                    <td>{{ aluno.get_full_name|default:aluno.username }}</td>
+                                                    <td>
+                                                        <div class="progress">
+                                                            <div class="progress-bar" role="progressbar" 
+                                                                 style="width: {{ media }}%"
+                                                                 aria-valuenow="{{ media }}" 
+                                                                 aria-valuemin="0" 
+                                                                 aria-valuemax="100">
+                                                                {{ media|floatformat:1 }}%
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        {% if media == 100 %}
+                                                            <span class="badge bg-success">Concluído</span>
+                                                        {% elif media > 0 %}
+                                                            <span class="badge bg-warning">Em Progresso</span>
+                                                        {% else %}
+                                                            <span class="badge bg-secondary">Não Iniciado</span>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                            {% endwith %}
+                                        {% endwith %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

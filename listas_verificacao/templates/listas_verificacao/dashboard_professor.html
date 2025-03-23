@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load listas_filters %}
+
+{% block title %}Dashboard do Professor{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>Dashboard do Professor</h1>
+            <p class="lead">Acompanhe o progresso dos alunos por domínio</p>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for dominio in dominios %}
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">{{ dominio.nome }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Aluno</th>
+                                        <th>Progresso</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for aluno in alunos %}
+                                        {% with progresso=progresso_alunos|get_item:aluno.id|get_item:dominio.codigo %}
+                                            <tr>
+                                                <td>{{ aluno.get_full_name|default:aluno.username }}</td>
+                                                <td>
+                                                    <div class="progress">
+                                                        <div class="progress-bar" role="progressbar" 
+                                                             style="width: {{ progresso.percentual }}%"
+                                                             aria-valuenow="{{ progresso.percentual }}" 
+                                                             aria-valuemin="0" 
+                                                             aria-valuemax="100">
+                                                            {{ progresso.validados }}/{{ progresso.total }}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    {% if progresso.percentual == 100 %}
+                                                        <span class="badge bg-success">Concluído</span>
+                                                    {% elif progresso.percentual > 0 %}
+                                                        <span class="badge bg-warning">Em Progresso</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">Não Iniciado</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% endwith %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 

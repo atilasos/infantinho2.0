@@ -24,6 +24,7 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),  # Add this line for authentication URLs
     path('', include('blog.urls')),  # Make blog the homepage
     path('ai/', include('ai_core.urls')),  # Adiciona as URLs do módulo de IA
+    path('listas/', include('listas_verificacao.urls')),  # Add URLs for learning checklists
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)  # Serve media files in development
 
 if settings.DEBUG:

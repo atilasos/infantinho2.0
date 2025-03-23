@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gerenciar Turma - {{ turma.nome }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>Gerenciar Turma</h1>
+            <p class="lead">{{ turma.nome }} - {{ turma.ano_escolar }}º ano - {{ turma.disciplina }}</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'listas_verificacao:lista_turmas' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Alunos na Turma -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Alunos na Turma</h5>
+                </div>
+                <div class="card-body">
+                    {% if turma.alunos.all %}
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="list-group">
+                                {% for aluno in turma.alunos.all %}
+                                    <div class="list-group-item">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="alunos" value="{{ aluno.id }}" id="aluno{{ aluno.id }}">
+                                            <label class="form-check-label" for="aluno{{ aluno.id }}">
+                                                {{ aluno.get_full_name|default:aluno.username }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <div class="mt-3">
+                                <button type="submit" name="remover_alunos" class="btn btn-danger">
+                                    <i class="fas fa-user-minus"></i> Remover Selecionados
+                                </button>
+                            </div>
+                        </form>
+                    {% else %}
+                        <p class="text-muted">Nenhum aluno na turma.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Adicionar Alunos -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Adicionar Alunos</h5>
+                </div>
+                <div class="card-body">
+                    {% if alunos_disponiveis %}
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="list-group">
+                                {% for aluno in alunos_disponiveis %}
+                                    <div class="list-group-item">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="alunos" value="{{ aluno.id }}" id="novo_aluno{{ aluno.id }}">
+                                            <label class="form-check-label" for="novo_aluno{{ aluno.id }}">
+                                                {{ aluno.get_full_name|default:aluno.username }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <div class="mt-3">
+                                <button type="submit" name="adicionar_alunos" class="btn btn-success">
+                                    <i class="fas fa-user-plus"></i> Adicionar Selecionados
+                                </button>
+                            </div>
+                        </form>
+                    {% else %}
+                        <p class="text-muted">Não há alunos disponíveis para adicionar.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Minhas Turmas{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>Minhas Turmas</h1>
+        </div>
+        <div class="col text-end">
+            <a href="{% url 'listas_verificacao:criar_turma' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nova Turma
+            </a>
+        </div>
+    </div>
+
+    {% if turmas %}
+        <div class="row">
+            {% for turma in turmas %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ turma.nome }}</h5>
+                            <p class="card-text">
+                                <strong>Ano:</strong> {{ turma.ano_escolar }}º ano<br>
+                                <strong>Disciplina:</strong> {{ turma.disciplina }}<br>
+                                <strong>Alunos:</strong> {{ turma.alunos.count }}
+                            </p>
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'listas_verificacao:dashboard_turma' turma.id %}" class="btn btn-primary">
+                                    <i class="fas fa-chart-line"></i> Dashboard
+                                </a>
+                                <a href="{% url 'listas_verificacao:gerenciar_turma' turma.id %}" class="btn btn-secondary">
+                                    <i class="fas fa-users-cog"></i> Gerenciar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <p>Você ainda não tem nenhuma turma cadastrada.</p>
+            <a href="{% url 'listas_verificacao:criar_turma' %}" class="btn btn-primary">
+                Criar Primeira Turma
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

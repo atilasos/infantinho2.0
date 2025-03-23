@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'taggit',
     'crispy_forms',
     'crispy_bootstrap5',
+    'listas_verificacao',
 ]
 
 MIDDLEWARE = [

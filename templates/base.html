@@ -151,6 +151,14 @@
                                     <li><a class="dropdown-item" href="{% url 'blog:pending_posts' %}">Posts Pendentes</a></li>
                                 {% endif %}
                                 <li><hr class="dropdown-divider"></li>
+                                {% if user.profile.user_type == 'teacher' %}
+                                    <li><a class="dropdown-item" href="{% url 'listas_verificacao:lista_turmas' %}">Minhas Turmas</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'listas_verificacao:dashboard_professor' %}">Dashboard Professor</a></li>
+                                {% endif %}
+                                {% if user.profile.user_type == 'student' %}
+                                    <li><a class="dropdown-item" href="{% url 'listas_verificacao:lista_aluno' %}">Minhas Listas</a></li>
+                                {% endif %}
+                                <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{% url 'account_logout' %}">Sair</a></li>
                             </ul>
                         </li>
