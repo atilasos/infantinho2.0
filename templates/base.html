@@ -1,4 +1,6 @@
 {% load static %}
+{% load notification_tags %}
+
 <!DOCTYPE html>
 <html lang="pt">
 <head>
@@ -113,6 +115,52 @@
             font-size: 0.9rem;
             color: #666;
         }
+        
+        .notification-item {
+            transition: background-color 0.2s ease;
+        }
+        
+        .notification-item:hover {
+            background-color: var(--background-color);
+        }
+        
+        .notification-item:not(:last-child) {
+            border-bottom: 1px solid #eee;
+        }
+        
+        .notification-item p {
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        
+        .notification-item small {
+            font-size: 0.8rem;
+        }
+        
+        .dropdown-menu {
+            padding: 0;
+        }
+        
+        .dropdown-item-text {
+            padding: 0;
+        }
+        
+        .dropdown-item {
+            padding: 0.5rem 1rem;
+        }
+        
+        .dropdown-item:hover {
+            background-color: var(--background-color);
+        }
+        
+        .btn-link {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .btn-link:hover {
+            color: var(--primary-color) !important;
+        }
     </style>
 </head>
 <body>
@@ -151,6 +199,62 @@
                 </ul>
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
+                    <li class="nav-item dropdown me-3">
+                        <a class="nav-link position-relative" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-bell"></i>
+                            {% with unread_count=user|unread_notifications_count %}
+                                {% if unread_count > 0 %}
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                    {{ unread_count }}
+                                </span>
+                                {% endif %}
+                            {% endwith %}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" style="width: 300px;">
+                            <li>
+                                <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
+                                    <h6 class="mb-0">Notificações</h6>
+                                    <a href="{% url 'listas_verificacao:configurar_notificacoes' %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-cog"></i>
+                                    </a>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="dropdown-item-text">
+                                    {% with recent_notifications=user.notificacao_set.all|slice:":5" %}
+                                        {% if recent_notifications %}
+                                            {% for notificacao in recent_notifications %}
+                                            <div class="notification-item p-2 {% if not notificacao.lida %}bg-light{% endif %}">
+                                                <div class="d-flex justify-content-between align-items-start">
+                                                    <div>
+                                                        <small class="text-muted">{{ notificacao.data_criacao|date:"d/m/Y H:i" }}</small>
+                                                        <p class="mb-0">{{ notificacao.titulo }}</p>
+                                                    </div>
+                                                    {% if not notificacao.lida %}
+                                                    <form method="post" action="{% url 'listas_verificacao:marcar_notificacao_lida' notificacao.id %}" class="d-inline">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-sm btn-link text-primary">
+                                                            <i class="fas fa-check"></i>
+                                                        </button>
+                                                    </form>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            <p class="text-center text-muted my-2">Nenhuma notificação</p>
+                                        {% endif %}
+                                    {% endwith %}
+                                </div>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-center" href="{% url 'listas_verificacao:lista_notificacoes' %}">
+                                    Ver todas as notificações
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
                             <img src="{% if user.avatar %}{{ user.avatar.url }}{% else %}{% static 'images/default-avatar.png' %}{% endif %}" 

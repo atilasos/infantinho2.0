@@ -7,7 +7,8 @@ from django.core.exceptions import ValidationError
 from .models import (
     Turma, ListaVerificacao, ProgressoAluno, Objetivo,
     CategoriaObjetivo, ObjetivoPredefinido, Disciplina,
-    Domínio, Subdomínio, AprendizagemEssencial
+    Domínio, Subdomínio, AprendizagemEssencial, Notificacao,
+    ConfiguracaoNotificacao
 )
 from django.contrib.auth import get_user_model
 from django.db.models import Count, Q
@@ -16,12 +17,14 @@ from django.utils import timezone
 from .forms import (
     ListaVerificacaoForm, TurmaForm, ObjetivoForm,
     CategoriaObjetivoForm, ObjetivoPredefinidoForm,
-    ImportarAprendizagensForm, AprendizagemEssencialForm
+    ImportarAprendizagensForm, AprendizagemEssencialForm,
+    ConfiguracaoNotificacaoForm
 )
 import json
 import csv
 import io
 import re
+from django.core.paginator import Paginator
 
 User = get_user_model()
 
@@ -732,3 +735,57 @@ def excluir_aprendizagem(request, aprendizagem_id):
         'aprendizagem': aprendizagem,
     }
     return render(request, 'listas_verificacao/confirmar_exclusao_aprendizagem.html', context)
+
+@login_required
+def lista_notificacoes(request):
+    """Lista todas as notificações do usuário logado."""
+    notificacoes = Notificacao.objects.filter(destinatario=request.user).order_by('-data_criacao')
+    
+    # Paginação
+    paginator = Paginator(notificacoes, 10)  # 10 notificações por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'notificacoes': page_obj,
+        'tipos_notificacao': Notificacao.TIPOS,
+        'is_paginated': True,
+        'page_obj': page_obj,
+    }
+    
+    return render(request, 'listas_verificacao/notificacoes/lista_notificacoes.html', context)
+
+@login_required
+@require_POST
+def marcar_notificacao_lida(request, notificacao_id):
+    """Marca uma notificação como lida."""
+    try:
+        notificacao = Notificacao.objects.get(
+            id=notificacao_id,
+            destinatario=request.user
+        )
+        notificacao.marcar_como_lida()
+        return JsonResponse({'success': True})
+    except Notificacao.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Notificação não encontrada'}, status=404)
+
+@login_required
+def configurar_notificacoes(request):
+    """
+    View para configurar as preferências de notificação do usuário.
+    """
+    config, created = ConfiguracaoNotificacao.objects.get_or_create(usuario=request.user)
+    
+    if request.method == 'POST':
+        form = ConfiguracaoNotificacaoForm(request.POST, instance=config)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Configurações de notificação atualizadas com sucesso!')
+            return redirect('listas_verificacao:configurar_notificacoes')
+    else:
+        form = ConfiguracaoNotificacaoForm(instance=config)
+    
+    return render(request, 'listas_verificacao/notificacoes/configurar_notificacoes.html', {
+        'form': form,
+        'config': config
+    })

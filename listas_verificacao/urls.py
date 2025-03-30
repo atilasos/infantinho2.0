@@ -29,4 +29,7 @@ urlpatterns = [
     path('aprendizagens/importar/', views.importar_aprendizagens, name='importar_aprendizagens'),
     path('aprendizagens/<int:aprendizagem_id>/editar/', views.editar_aprendizagem, name='editar_aprendizagem'),
     path('aprendizagens/<int:aprendizagem_id>/excluir/', views.excluir_aprendizagem, name='excluir_aprendizagem'),
+    path('notificacoes/', views.lista_notificacoes, name='lista_notificacoes'),
+    path('notificacoes/<int:notificacao_id>/marcar-lida/', views.marcar_notificacao_lida, name='marcar_notificacao_lida'),
+    path('notificacoes/configurar/', views.configurar_notificacoes, name='configurar_notificacoes'),
 ] 

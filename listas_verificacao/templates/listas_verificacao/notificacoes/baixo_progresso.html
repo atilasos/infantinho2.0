@@ -1,0 +1,34 @@
+{% extends "listas_verificacao/notificacoes/base_notificacao.html" %}
+
+{% block notificacao_mensagem %}
+<div class="notificacao-baixo-progresso">
+    <p>O aluno {{ notificacao.destinatario.get_full_name|default:notificacao.destinatario.username }} 
+    está com baixo progresso na aprendizagem:</p>
+    
+    {% if notificacao.aprendizagem %}
+    <div class="aprendizagem-detalhes">
+        <strong>{{ notificacao.aprendizagem.codigo }}</strong>
+        <p>{{ notificacao.aprendizagem.descricao }}</p>
+    </div>
+    {% endif %}
+    
+    {% if notificacao.progresso %}
+    <div class="progresso-detalhes">
+        <p>Estado atual: {{ notificacao.progresso.get_estado_display }}</p>
+        {% if notificacao.progresso.observacoes %}
+        <p>Observações: {{ notificacao.progresso.observacoes }}</p>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <div class="acoes-sugeridas">
+        <p>Sugestões de ação:</p>
+        <ul>
+            <li>Verificar se há dúvidas específicas sobre o conteúdo</li>
+            <li>Propor atividades de reforço</li>
+            <li>Agendar uma conversa para entender melhor as dificuldades</li>
+            <li>Verificar se há recursos adicionais que podem ajudar</li>
+        </ul>
+    </div>
+</div>
+{% endblock %} 

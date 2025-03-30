@@ -1,7 +1,8 @@
 from django.contrib import admin
 from .models import (
     ListaVerificacao, Objetivo, Turma, ProgressoAluno,
-    Disciplina, Domínio, Subdomínio, AprendizagemEssencial
+    Disciplina, Domínio, Subdomínio, AprendizagemEssencial,
+    Notificacao
 )
 
 @admin.register(Disciplina)
@@ -62,3 +63,12 @@ class ProgressoAlunoAdmin(admin.ModelAdmin):
     list_filter = ('estado', 'data_atualizacao')
     search_fields = ('aluno__username', 'aprendizagem__codigo')
     ordering = ('-data_atualizacao',)
+
+@admin.register(Notificacao)
+class NotificacaoAdmin(admin.ModelAdmin):
+    list_display = ('tipo', 'destinatario', 'titulo', 'prioridade', 'lida', 'data_criacao')
+    list_filter = ('tipo', 'prioridade', 'lida', 'data_criacao')
+    search_fields = ('titulo', 'mensagem', 'destinatario__username', 'remetente__username')
+    date_hierarchy = 'data_criacao'
+    readonly_fields = ('data_criacao', 'data_leitura')
+    ordering = ('-data_criacao',)

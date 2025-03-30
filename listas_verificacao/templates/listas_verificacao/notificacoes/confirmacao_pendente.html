@@ -1,0 +1,47 @@
+{% extends "listas_verificacao/notificacoes/base_notificacao.html" %}
+
+{% block notificacao_mensagem %}
+<div class="notificacao-confirmacao-pendente">
+    <p>Há uma confirmação pendente para a seguinte aprendizagem:</p>
+    
+    {% if notificacao.aprendizagem %}
+    <div class="aprendizagem-detalhes">
+        <strong>{{ notificacao.aprendizagem.codigo }}</strong>
+        <p>{{ notificacao.aprendizagem.descricao }}</p>
+    </div>
+    {% endif %}
+    
+    {% if notificacao.progresso %}
+    <div class="progresso-detalhes">
+        <p>Aluno: {{ notificacao.progresso.aluno.get_full_name|default:notificacao.progresso.aluno.username }}</p>
+        <p>Estado atual: {{ notificacao.progresso.get_estado_display }}</p>
+        {% if notificacao.progresso.observacoes %}
+        <p>Observações do aluno: {{ notificacao.progresso.observacoes }}</p>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <div class="acoes-necessarias">
+        <p>Ações necessárias:</p>
+        <ul>
+            <li>Revisar o progresso do aluno</li>
+            <li>Verificar se os critérios de aprendizagem foram atendidos</li>
+            <li>Confirmar ou solicitar ajustes no progresso</li>
+            <li>Fornecer feedback construtivo</li>
+        </ul>
+    </div>
+    
+    {% if notificacao.lista_verificacao %}
+    <div class="links-rapidos">
+        <a href="{% url 'listas_verificacao:confirmar_progresso' notificacao.progresso.id %}" 
+           class="btn-confirmar">
+            Confirmar Progresso
+        </a>
+        <a href="{% url 'listas_verificacao:detalhe_lista' notificacao.lista_verificacao.id %}" 
+           class="btn-ver-lista">
+            Ver Lista de Verificação
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

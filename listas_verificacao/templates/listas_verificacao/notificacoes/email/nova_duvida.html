@@ -1,0 +1,34 @@
+{% extends "listas_verificacao/notificacoes/email/base_email.html" %}
+
+{% block email_content %}
+<p>Olá,</p>
+
+<p>Uma nova dúvida foi registrada:</p>
+
+<div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0;">
+    <h3 style="margin-top: 0;">{{ aprendizagem.codigo }}</h3>
+    <p>{{ aprendizagem.descricao }}</p>
+</div>
+
+<div style="background-color: #e9ecef; padding: 15px; border-radius: 5px; margin: 15px 0;">
+    <h4 style="margin-top: 0;">Dúvida</h4>
+    <p><strong>Por:</strong> {{ remetente }}</p>
+    <div style="background-color: #fff3cd; padding: 10px; border-radius: 5px; margin: 10px 0;">
+        {{ notificacao.mensagem|linebreaks }}
+    </div>
+</div>
+
+<p>Você pode:</p>
+<ul>
+    <li>Responder diretamente à dúvida</li>
+    <li>Verificar o contexto completo da dúvida</li>
+    <li>Agendar um momento para esclarecimento</li>
+    <li>Indicar recursos adicionais</li>
+</ul>
+
+<div style="margin-top: 20px;">
+    <a href="{{ site_url }}{% url 'listas_verificacao:lista_aluno' %}" class="button">
+        Ver Minhas Listas
+    </a>
+</div>
+{% endblock %} 

@@ -2,15 +2,15 @@
 
 ## 1. Sistema de Notificações
 ### 1.1 Configuração Base
-- [ ] Criar modelo `Notificacao`
-- [ ] Implementar sistema de templates de notificações
-- [ ] Configurar sistema de envio de emails
-- [ ] Criar interface de configuração de notificações
+- [x] Criar modelo `Notificacao`
+- [x] Implementar sistema de templates de notificações
+- [x] Configurar sistema de envio de emails
+- [x] Criar interface de configuração de notificações
 
 ### 1.2 Notificações para Professores
-- [ ] Implementar alertas de baixo progresso
+- [x] Implementar alertas de baixo progresso
 - [ ] Criar notificações de prazos próximos
-- [ ] Adicionar notificações de novas dúvidas
+- [x] Adicionar notificações de novas dúvidas
 - [ ] Implementar notificações de conquistas dos alunos
 
 ### 1.3 Notificações para Alunos
@@ -256,9 +256,9 @@
 
 ## Status de Implementação
 - Total de Tarefas: 149
-- Concluídas: 0
+- Concluídas: 5
 - Em Progresso: 0
-- Pendentes: 149
+- Pendentes: 144
 
 ## Notas
 - Priorizar implementações baseadas no feedback dos usuários

@@ -1,6 +1,14 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.utils import timezone
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from .email_service import (
+    enviar_email_baixo_progresso,
+    enviar_email_confirmacao_pendente,
+    enviar_email_nova_duvida
+)
 
 User = get_user_model()
 
@@ -163,3 +171,180 @@ class ProgressoAluno(models.Model):
     
     def __str__(self):
         return f"{self.aluno.username} - {self.aprendizagem.codigo}"
+
+class Notificacao(models.Model):
+    TIPOS = [
+        ('baixo_progresso', 'Baixo Progresso'),
+        ('prazo_proximo', 'Prazo Próximo'),
+        ('nova_duvida', 'Nova Dúvida'),
+        ('conquista', 'Conquista'),
+        ('feedback', 'Feedback'),
+        ('lembrete', 'Lembrete'),
+        ('resposta_duvida', 'Resposta à Dúvida'),
+        ('confirmacao_pendente', 'Confirmação Pendente'),
+        ('nova_dificuldade', 'Nova Dificuldade'),
+        ('intervencao', 'Intervenção Pedagógica'),
+    ]
+    
+    NIVEL_PRIORIDADE = [
+        ('baixa', 'Baixa'),
+        ('media', 'Média'),
+        ('alta', 'Alta'),
+    ]
+    
+    destinatario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notificacoes_recebidas')
+    remetente = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notificacoes_enviadas', null=True, blank=True)
+    tipo = models.CharField(max_length=20, choices=TIPOS)
+    titulo = models.CharField(max_length=200)
+    mensagem = models.TextField()
+    prioridade = models.CharField(max_length=10, choices=NIVEL_PRIORIDADE, default='media')
+    lida = models.BooleanField(default=False)
+    data_criacao = models.DateTimeField(auto_now_add=True)
+    data_leitura = models.DateTimeField(null=True, blank=True)
+    
+    # Relacionamentos opcionais para contextualizar a notificação
+    lista_verificacao = models.ForeignKey(ListaVerificacao, on_delete=models.CASCADE, related_name='notificacoes', null=True, blank=True)
+    aprendizagem = models.ForeignKey(AprendizagemEssencial, on_delete=models.CASCADE, related_name='notificacoes', null=True, blank=True)
+    progresso = models.ForeignKey(ProgressoAluno, on_delete=models.CASCADE, related_name='notificacoes', null=True, blank=True)
+    
+    class Meta:
+        verbose_name = 'Notificação'
+        verbose_name_plural = 'Notificações'
+        ordering = ['-data_criacao']
+        indexes = [
+            models.Index(fields=['destinatario', 'lida']),
+            models.Index(fields=['tipo', 'data_criacao']),
+        ]
+    
+    def __str__(self):
+        return f"{self.tipo} - {self.titulo}"
+    
+    def marcar_como_lida(self):
+        if not self.lida:
+            self.lida = True
+            self.data_leitura = timezone.now()
+            self.save()
+
+class ConfiguracaoNotificacao(models.Model):
+    FREQUENCIA_CHOICES = [
+        ('imediato', 'Imediatamente'),
+        ('diario', 'Resumo Diário'),
+        ('semanal', 'Resumo Semanal'),
+        ('desativado', 'Desativado'),
+    ]
+
+    usuario = models.OneToOneField(User, on_delete=models.CASCADE, related_name='config_notificacoes')
+    
+    # Notificações por tipo
+    notif_baixo_progresso = models.BooleanField('Alertas de Baixo Progresso', default=True)
+    notif_prazos = models.BooleanField('Notificações de Prazos', default=True)
+    notif_duvidas = models.BooleanField('Notificações de Dúvidas', default=True)
+    notif_conquistas = models.BooleanField('Notificações de Conquistas', default=True)
+    notif_feedback = models.BooleanField('Notificações de Feedback', default=True)
+    
+    # Configurações de email
+    receber_emails = models.BooleanField('Receber Emails', default=True)
+    frequencia_emails = models.CharField(
+        'Frequência de Emails',
+        max_length=20,
+        choices=FREQUENCIA_CHOICES,
+        default='imediato'
+    )
+    
+    # Horários permitidos (para evitar notificações em horários indesejados)
+    horario_inicio = models.TimeField('Horário de Início', default='08:00')
+    horario_fim = models.TimeField('Horário de Fim', default='18:00')
+    
+    # Dias da semana permitidos
+    dias_semana = models.CharField(
+        'Dias da Semana',
+        max_length=20,
+        default='1,2,3,4,5',  # Segunda a Sexta por padrão
+        help_text='Dias da semana (1-7, separados por vírgula. 1=Segunda, 7=Domingo)'
+    )
+    
+    class Meta:
+        verbose_name = 'Configuração de Notificação'
+        verbose_name_plural = 'Configurações de Notificações'
+    
+    def __str__(self):
+        return f'Configurações de {self.usuario.username}'
+    
+    @property
+    def dias_semana_list(self):
+        """Retorna a lista de dias da semana como inteiros."""
+        return [int(d) for d in self.dias_semana.split(',') if d.strip()]
+    
+    def pode_enviar_agora(self):
+        """Verifica se pode enviar notificação no momento atual."""
+        agora = timezone.localtime()
+        
+        # Verifica se está dentro do horário permitido
+        hora_atual = agora.time()
+        if not (self.horario_inicio <= hora_atual <= self.horario_fim):
+            return False
+        
+        # Verifica se é um dia da semana permitido (1=Segunda, 7=Domingo)
+        if agora.isoweekday() not in self.dias_semana_list:
+            return False
+        
+        return True
+    
+    def deve_enviar_email(self, tipo_notificacao):
+        """Verifica se deve enviar email para um tipo específico de notificação."""
+        if not self.receber_emails:
+            return False
+            
+        # Mapeia os tipos de notificação para os campos do modelo
+        mapa_tipos = {
+            'baixo_progresso': self.notif_baixo_progresso,
+            'prazo_proximo': self.notif_prazos,
+            'nova_duvida': self.notif_duvidas,
+            'conquista': self.notif_conquistas,
+            'feedback': self.notif_feedback,
+        }
+        
+        # Verifica se o tipo de notificação está ativado
+        return mapa_tipos.get(tipo_notificacao, True)
+
+@receiver(post_save, sender=User)
+def criar_configuracao_notificacao(sender, instance, created, **kwargs):
+    """Cria configuração de notificação padrão para novos usuários."""
+    if created:
+        ConfiguracaoNotificacao.objects.create(usuario=instance)
+
+# Atualiza o signal de notificação para usar as configurações
+@receiver(post_save, sender=Notificacao)
+def enviar_notificacao_email(sender, instance, created, **kwargs):
+    """
+    Envia um email quando uma nova notificação é criada, respeitando as configurações do usuário.
+    """
+    if not created or not instance.destinatario.email:
+        return
+        
+    try:
+        config = instance.destinatario.config_notificacoes
+        
+        # Verifica se deve enviar email
+        if not config.receber_emails or not config.deve_enviar_email(instance.tipo):
+            return
+            
+        # Verifica horário/dia permitido
+        if not config.pode_enviar_agora():
+            return
+            
+        # Envia o email apropriado
+        if instance.tipo == 'baixo_progresso':
+            enviar_email_baixo_progresso(instance)
+        elif instance.tipo == 'confirmacao_pendente':
+            enviar_email_confirmacao_pendente(instance)
+        elif instance.tipo == 'nova_duvida':
+            enviar_email_nova_duvida(instance)
+    except ConfiguracaoNotificacao.DoesNotExist:
+        # Se não tem configuração, usa o comportamento padrão
+        if instance.tipo == 'baixo_progresso':
+            enviar_email_baixo_progresso(instance)
+        elif instance.tipo == 'confirmacao_pendente':
+            enviar_email_confirmacao_pendente(instance)
+        elif instance.tipo == 'nova_duvida':
+            enviar_email_nova_duvida(instance)

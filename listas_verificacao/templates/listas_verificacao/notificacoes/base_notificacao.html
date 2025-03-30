@@ -1,0 +1,46 @@
+{% load static %}
+
+<div class="notificacao {% if notificacao.lida %}notificacao-lida{% else %}notificacao-nao-lida{% endif %} 
+                    notificacao-prioridade-{{ notificacao.prioridade }}">
+    <div class="notificacao-cabecalho">
+        <span class="notificacao-tipo">{{ notificacao.get_tipo_display }}</span>
+        <span class="notificacao-data">{{ notificacao.data_criacao|date:"d/m/Y H:i" }}</span>
+    </div>
+    
+    <div class="notificacao-conteudo">
+        <h4 class="notificacao-titulo">{{ notificacao.titulo }}</h4>
+        <div class="notificacao-mensagem">
+            {{ notificacao.mensagem|safe }}
+        </div>
+        
+        {% if notificacao.remetente %}
+        <div class="notificacao-remetente">
+            De: {{ notificacao.remetente.get_full_name|default:notificacao.remetente.username }}
+        </div>
+        {% endif %}
+        
+        {% if notificacao.aprendizagem %}
+        <div class="notificacao-contexto">
+            <a href="{% url 'listas_verificacao:detalhe_aprendizagem' notificacao.aprendizagem.id %}">
+                {{ notificacao.aprendizagem.codigo }} - {{ notificacao.aprendizagem.descricao|truncatechars:100 }}
+            </a>
+        </div>
+        {% endif %}
+        
+        {% if notificacao.lista_verificacao %}
+        <div class="notificacao-contexto">
+            <a href="{% url 'listas_verificacao:detalhe_lista' notificacao.lista_verificacao.id %}">
+                {{ notificacao.lista_verificacao.titulo }}
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    
+    {% if not notificacao.lida %}
+    <div class="notificacao-acoes">
+        <button class="btn-marcar-lida" data-notificacao-id="{{ notificacao.id }}">
+            Marcar como lida
+        </button>
+    </div>
+    {% endif %}
+</div> 

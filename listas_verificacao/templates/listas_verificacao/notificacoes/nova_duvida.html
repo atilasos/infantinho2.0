@@ -1,0 +1,51 @@
+{% extends "listas_verificacao/notificacoes/base_notificacao.html" %}
+
+{% block notificacao_mensagem %}
+<div class="notificacao-nova-duvida">
+    <p>Uma nova dúvida foi registrada:</p>
+    
+    {% if notificacao.remetente %}
+    <div class="duvida-autor">
+        <p>Por: {{ notificacao.remetente.get_full_name|default:notificacao.remetente.username }}</p>
+    </div>
+    {% endif %}
+    
+    {% if notificacao.aprendizagem %}
+    <div class="duvida-contexto">
+        <p>Relacionada à aprendizagem:</p>
+        <strong>{{ notificacao.aprendizagem.codigo }}</strong>
+        <p>{{ notificacao.aprendizagem.descricao }}</p>
+    </div>
+    {% endif %}
+    
+    <div class="duvida-conteudo">
+        <h5>Dúvida:</h5>
+        <div class="duvida-texto">
+            {{ notificacao.mensagem|linebreaks }}
+        </div>
+    </div>
+    
+    {% if notificacao.lista_verificacao %}
+    <div class="acoes-possiveis">
+        <p>Você pode:</p>
+        <ul>
+            <li>Responder diretamente à dúvida</li>
+            <li>Verificar o contexto completo da dúvida</li>
+            <li>Agendar um momento para esclarecimento</li>
+            <li>Indicar recursos adicionais</li>
+        </ul>
+        
+        <div class="links-rapidos">
+            <a href="{% url 'listas_verificacao:responder_duvida' notificacao.id %}" 
+               class="btn-responder">
+                Responder Dúvida
+            </a>
+            <a href="{% url 'listas_verificacao:detalhe_lista' notificacao.lista_verificacao.id %}" 
+               class="btn-ver-contexto">
+                Ver Contexto
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

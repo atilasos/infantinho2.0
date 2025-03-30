@@ -1,0 +1,42 @@
+{% extends "listas_verificacao/notificacoes/email/base_email.html" %}
+
+{% block email_content %}
+<p>Olá {{ aluno }},</p>
+
+<p>Notamos que você está com baixo progresso na seguinte aprendizagem:</p>
+
+<div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0;">
+    <h3 style="margin-top: 0;">{{ aprendizagem.codigo }}</h3>
+    <p>{{ aprendizagem.descricao }}</p>
+</div>
+
+{% if progresso %}
+<p>Estado atual: <strong>{{ progresso.get_estado_display }}</strong></p>
+{% if progresso.observacoes %}
+<p>Suas observações:</p>
+<div style="background-color: #fff3cd; padding: 10px; border-radius: 5px; margin: 10px 0;">
+    {{ progresso.observacoes }}
+</div>
+{% endif %}
+{% endif %}
+
+<p>Sugestões para melhorar seu progresso:</p>
+<ul>
+    <li>Verifique se há dúvidas específicas sobre o conteúdo</li>
+    <li>Participe de atividades de reforço</li>
+    <li>Agende uma conversa com seu professor para esclarecer dúvidas</li>
+    <li>Explore recursos adicionais disponíveis</li>
+</ul>
+
+<p>Se precisar de ajuda, não hesite em:</p>
+<ul>
+    <li>Registrar suas dúvidas no sistema</li>
+    <li>Participar de sessões de esclarecimento</li>
+    <li>Buscar apoio dos seus colegas</li>
+    <li>Consultar materiais de estudo adicionais</li>
+</ul>
+
+<a href="{{ site_url }}{% url 'listas_verificacao:lista_aluno' %}" class="button">
+    Ver Minhas Listas
+</a>
+{% endblock %} 

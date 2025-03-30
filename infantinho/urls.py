@@ -26,7 +26,7 @@ urlpatterns = [
     path('pages/', include('django.contrib.flatpages.urls')),
     path('', include('blog.urls', namespace='blog')),
     path('ai/', include('ai_core.urls', namespace='ai_core')),
-    path('checklists/', include('listas_verificacao.urls')),  # Learning checklists URLs
+    path('listas-verificacao/', include('listas_verificacao.urls')),  # Learning checklists URLs
     
     # Redirecionamentos para autenticação Microsoft
     path('accounts/login/', RedirectView.as_view(url='/microsoft/to-auth-redirect/', permanent=False), name='login'),
