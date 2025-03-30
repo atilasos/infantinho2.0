@@ -1,17 +1,15 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth import get_user_model
-from .models import UserProfile
+from django.utils import timezone
+from django.contrib.auth.models import Group
 
 User = get_user_model()
 
 @receiver(post_save, sender=User)
-def create_user_profile(sender, instance, created, **kwargs):
-    """Create a UserProfile for every new user."""
+def update_user_profile(sender, instance, created, **kwargs):
+    """Atualiza o perfil do usuário quando o usuário é salvo."""
     if created:
-        UserProfile.objects.get_or_create(user=instance)
-
-@receiver(post_save, sender=User)
-def save_user_profile(sender, instance, **kwargs):
-    """Save the UserProfile whenever the user is saved."""
-    UserProfile.objects.get_or_create(user=instance) 
+        # Adiciona o usuário ao grupo 'guest' por padrão
+        guest_group, _ = Group.objects.get_or_create(name='guest')
+        instance.groups.add(guest_group) 

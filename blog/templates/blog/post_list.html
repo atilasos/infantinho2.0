@@ -1,5 +1,6 @@
 {% extends 'blog/base.html' %}
 {% load static %}
+{% load blog_filters %}
 
 {% block title %}Blog - Infantinho 2.0{% endblock %}
 
@@ -315,7 +316,7 @@
                 <ul class="tag-list">
                     {% for tag in tags %}
                     <li>
-                        <a href="{% url 'blog:tag_detail' tag.slug %}">
+                        <a href="{% url 'blog:tag_detail' tag.slug|replace_hyphen %}">
                             {{ tag.name }}
                             <span class="badge bg-secondary">{{ tag.post_count }}</span>
                         </a>

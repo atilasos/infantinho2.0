@@ -1,0 +1,38 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+
+{% block title %}Excluir Aprendizagem Essencial{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title mb-0">Confirmar Exclusão</h2>
+                </div>
+                <div class="card-body">
+                    <p class="lead">
+                        Tem certeza que deseja excluir a aprendizagem essencial:
+                    </p>
+                    
+                    <div class="alert alert-info">
+                        <strong>Código:</strong> {{ aprendizagem.codigo }}<br>
+                        <strong>Descrição:</strong> {{ aprendizagem.descricao }}<br>
+                        <strong>Disciplina:</strong> {{ aprendizagem.disciplina.nome }}<br>
+                        <strong>Domínio:</strong> {{ aprendizagem.dominio.nome }}
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
+                            <a href="{% url 'listas_verificacao:gerenciar_aprendizagens' %}" class="btn btn-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

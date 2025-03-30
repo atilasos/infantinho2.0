@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'django.contrib.sitemaps',
     'django.contrib.flatpages',
+    'accounts',
     'pit',
     'tea',
     'gestao_cooperada',
@@ -222,3 +223,6 @@ AI_AGENT_CONFIG = {
     'target_audience': 'children',
     'age_range': '6-12'
 }
+
+# Configuração do CustomUser
+AUTH_USER_MODEL = 'accounts.CustomUser'

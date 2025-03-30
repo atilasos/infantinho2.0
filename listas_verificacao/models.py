@@ -32,13 +32,77 @@ class ObjetivoPredefinido(models.Model):
     def __str__(self):
         return f'{self.codigo} - {self.titulo}'
 
+class Disciplina(models.Model):
+    nome = models.CharField(max_length=100)
+    codigo = models.CharField(max_length=10, unique=True)
+    descricao = models.TextField(blank=True)
+    
+    class Meta:
+        verbose_name = 'Disciplina'
+        verbose_name_plural = 'Disciplinas'
+    
+    def __str__(self):
+        return f"{self.codigo} - {self.nome}"
+
+class Domínio(models.Model):
+    nome = models.CharField(max_length=100)
+    codigo = models.CharField(max_length=10)
+    disciplina = models.ForeignKey(Disciplina, on_delete=models.CASCADE, related_name='dominios')
+    descricao = models.TextField(blank=True)
+    ordem = models.PositiveIntegerField(default=0)
+    
+    class Meta:
+        verbose_name = 'Domínio'
+        verbose_name_plural = 'Domínios'
+        ordering = ['ordem']
+        unique_together = ['codigo', 'disciplina']
+    
+    def __str__(self):
+        return f"{self.codigo} - {self.nome}"
+
+class Subdomínio(models.Model):
+    nome = models.CharField(max_length=100)
+    codigo = models.CharField(max_length=10)
+    dominio = models.ForeignKey(Domínio, on_delete=models.CASCADE, related_name='subdominios')
+    descricao = models.TextField(blank=True)
+    ordem = models.PositiveIntegerField(default=0)
+    
+    class Meta:
+        verbose_name = 'Subdomínio'
+        verbose_name_plural = 'Subdomínios'
+        ordering = ['ordem']
+        unique_together = ['codigo', 'dominio']
+    
+    def __str__(self):
+        return f"{self.codigo} - {self.nome}"
+
+class AprendizagemEssencial(models.Model):
+    codigo = models.CharField(max_length=10)  # Ex: OC1, OE2, etc.
+    descricao = models.TextField()
+    disciplina = models.ForeignKey(Disciplina, on_delete=models.CASCADE, related_name='aprendizagens')
+    dominio = models.ForeignKey(Domínio, on_delete=models.CASCADE, related_name='aprendizagens')
+    subdominio = models.ForeignKey(Subdomínio, on_delete=models.CASCADE, related_name='aprendizagens', null=True, blank=True)
+    ano_escolar = models.PositiveIntegerField()
+    ordem = models.PositiveIntegerField(default=0)
+    
+    class Meta:
+        verbose_name = 'Aprendizagem Essencial'
+        verbose_name_plural = 'Aprendizagens Essenciais'
+        ordering = ['ano_escolar', 'ordem']
+        unique_together = ['codigo', 'disciplina', 'ano_escolar']
+    
+    def __str__(self):
+        return f"{self.codigo} - {self.descricao[:50]}..."
+
 class ListaVerificacao(models.Model):
     titulo = models.CharField(max_length=200)
     descricao = models.TextField()
     turma = models.ForeignKey('Turma', on_delete=models.CASCADE, related_name='listas_verificacao', null=True, blank=True)
+    disciplina = models.ForeignKey(Disciplina, on_delete=models.CASCADE, related_name='listas_verificacao', null=True, blank=True)
+    ano_escolar = models.PositiveIntegerField(default=6)  # Valor padrão: 6º ano
+    aprendizagens = models.ManyToManyField(AprendizagemEssencial, related_name='listas_verificacao')
     data_criacao = models.DateTimeField(auto_now_add=True)
     data_atualizacao = models.DateTimeField(auto_now=True)
-    objetivos_predefinidos = models.ManyToManyField(ObjetivoPredefinido, related_name='listas_verificacao', blank=True)
     
     class Meta:
         verbose_name = 'Lista de Verificação'
@@ -81,39 +145,21 @@ class ProgressoAluno(models.Model):
         ('nao_iniciado', 'Não Iniciado'),
         ('em_progresso', 'Em Progresso'),
         ('concluido', 'Concluído'),
-        ('validado', 'Validado'),
+        ('dificuldade', 'Com Dificuldade'),
     ]
-
+    
     aluno = models.ForeignKey(User, on_delete=models.CASCADE, related_name='progressos')
     lista_verificacao = models.ForeignKey(ListaVerificacao, on_delete=models.CASCADE, related_name='progressos')
-    objetivos_estado = models.JSONField(default=dict)  # {objetivo_id: estado}
+    aprendizagem = models.ForeignKey(AprendizagemEssencial, on_delete=models.CASCADE, related_name='progressos', null=True, blank=True)
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='nao_iniciado')
+    observacoes = models.TextField(blank=True)
     data_atualizacao = models.DateTimeField(auto_now=True)
     
     class Meta:
-        unique_together = ['aluno', 'lista_verificacao']
         verbose_name = 'Progresso do Aluno'
         verbose_name_plural = 'Progressos dos Alunos'
+        unique_together = ['aluno', 'lista_verificacao', 'aprendizagem']
+        ordering = ['-data_atualizacao']
     
     def __str__(self):
-        return f'Progresso de {self.aluno.get_full_name()} em {self.lista_verificacao.titulo}'
-    
-    @property
-    def porcentagem_conclusao(self):
-        """Retorna a porcentagem de objetivos concluídos"""
-        total_objetivos = self.lista_verificacao.objetivos.count()
-        if total_objetivos == 0:
-            return 0
-        objetivos_concluidos = sum(1 for estado in self.objetivos_estado.values() if estado == 'concluido')
-        return (objetivos_concluidos / total_objetivos) * 100
-
-    def get_estado_objetivo(self, objetivo_id):
-        """Retorna o estado atual de um objetivo"""
-        return self.objetivos_estado.get(str(objetivo_id), 'nao_iniciado')
-
-    def set_estado_objetivo(self, objetivo_id, estado):
-        """Define o estado de um objetivo"""
-        if estado in dict(self.ESTADOS):
-            self.objetivos_estado[str(objetivo_id)] = estado
-            self.save()
-            return True
-        return False
+        return f"{self.aluno.username} - {self.aprendizagem.codigo}"

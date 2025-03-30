@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load listas_filters %}
+
+{% block title %}Registrar Progresso - {{ lista.titulo }} - Infantinho 2.0{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-4">Registrar Progresso</h1>
+            <p class="lead">{{ lista.titulo }}</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="list-group">
+                    {% for aprendizagem in lista.aprendizagens.all %}
+                    <div class="list-group-item">
+                        <div class="mb-3">
+                            <h6 class="mb-1">{{ aprendizagem.codigo }}</h6>
+                            <p class="mb-1">{{ aprendizagem.descricao }}</p>
+                        </div>
+                        
+                        <div class="btn-group" role="group">
+                            {% for estado_valor, estado_nome in estados %}
+                            <input type="radio" 
+                                   class="btn-check" 
+                                   name="estado_{{ aprendizagem.id }}" 
+                                   id="estado_{{ aprendizagem.id }}_{{ estado_valor }}"
+                                   value="{{ estado_valor }}"
+                                   {% if progresso|get_item:aprendizagem.id and progresso|get_item:aprendizagem.id.estado == estado_valor %}checked{% endif %}>
+                            <label class="btn btn-outline-primary" 
+                                   for="estado_{{ aprendizagem.id }}_{{ estado_valor }}">
+                                {{ estado_nome }}
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Salvar Progresso
+                    </button>
+                    <a href="{% url 'listas_verificacao:lista_aluno' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Adicionar animação suave ao scroll
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+    });
+
+    // Adicionar estilos para os botões de estado
+    document.querySelectorAll('.btn-check').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const label = document.querySelector(`label[for="${this.id}"]`);
+            if (this.checked) {
+                label.classList.remove('btn-outline-primary');
+                label.classList.add('btn-primary');
+            } else {
+                label.classList.remove('btn-primary');
+                label.classList.add('btn-outline-primary');
+            }
+        });
+    });
+</script>
+{% endblock %} 

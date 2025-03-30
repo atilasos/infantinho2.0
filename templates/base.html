@@ -138,11 +138,11 @@
                         <a class="nav-link" href="{% url 'blog:tag_list' %}">Tags</a>
                     </li>
                     {% if user.is_authenticated %}
-                        {% if user.profile.user_type == 'teacher' %}
+                        {% if user.is_teacher %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'listas_verificacao:dashboard_professor' %}">Dashboard</a>
                         </li>
-                        {% elif user.profile.user_type == 'student' %}
+                        {% elif user.is_student %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'listas_verificacao:lista_aluno' %}">Minhas Aprendizagens</a>
                         </li>
@@ -153,15 +153,18 @@
                     {% if user.is_authenticated %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                            <img src="{% if user.profile.avatar %}{{ user.profile.avatar.url }}{% else %}{% static 'images/default-avatar.png' %}{% endif %}" 
+                            <img src="{% if user.avatar %}{{ user.avatar.url }}{% else %}{% static 'images/default-avatar.png' %}{% endif %}" 
                                  alt="Avatar" class="rounded-circle me-2" style="width: 24px; height: 24px; object-fit: cover;">
                             {{ user.get_full_name|default:user.username }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            {% if user.profile.user_type == 'teacher' %}
+                            {% if user.is_teacher %}
                                 <li><a class="dropdown-item" href="{% url 'blog:post_create' %}">Novo Post</a></li>
+                                <li><a class="dropdown-item" href="{% url 'blog:pending_posts' %}">Posts Pendentes</a></li>
+                                <li><a class="dropdown-item" href="{% url 'blog:moderate_comments' %}">Moderar Comentários</a></li>
+                                <li><a class="dropdown-item" href="{% url 'blog:manage_users' %}">Gerenciar Utilizadores</a></li>
                                 <li><a class="dropdown-item" href="{% url 'listas_verificacao:lista_turmas' %}">Gerenciar Turmas</a></li>
-                            {% elif user.profile.user_type == 'student' %}
+                            {% elif user.is_student %}
                                 <li><a class="dropdown-item" href="{% url 'listas_verificacao:lista_aluno' %}">Minhas Aprendizagens</a></li>
                             {% endif %}
                             <li><a class="dropdown-item" href="{% url 'blog:profile' %}">Meu Perfil</a></li>
@@ -210,9 +213,9 @@
                         <li><a href="{% url 'blog:category_list' %}">Categorias</a></li>
                         <li><a href="{% url 'blog:tag_list' %}">Tags</a></li>
                         {% if user.is_authenticated %}
-                            {% if user.profile.user_type == 'teacher' %}
+                            {% if user.is_teacher %}
                             <li><a href="{% url 'listas_verificacao:dashboard_professor' %}">Dashboard do Professor</a></li>
-                            {% elif user.profile.user_type == 'student' %}
+                            {% elif user.is_student %}
                             <li><a href="{% url 'listas_verificacao:lista_aluno' %}">Minhas Aprendizagens</a></li>
                             {% endif %}
                         {% endif %}

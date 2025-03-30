@@ -3,9 +3,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+from django.core.exceptions import ValidationError
 from .models import (
     Turma, ListaVerificacao, ProgressoAluno, Objetivo,
-    CategoriaObjetivo, ObjetivoPredefinido
+    CategoriaObjetivo, ObjetivoPredefinido, Disciplina,
+    Domínio, Subdomínio, AprendizagemEssencial
 )
 from django.contrib.auth import get_user_model
 from django.db.models import Count, Q
@@ -13,15 +15,19 @@ from django.urls import reverse
 from django.utils import timezone
 from .forms import (
     ListaVerificacaoForm, TurmaForm, ObjetivoForm,
-    CategoriaObjetivoForm, ObjetivoPredefinidoForm
+    CategoriaObjetivoForm, ObjetivoPredefinidoForm,
+    ImportarAprendizagensForm, AprendizagemEssencialForm
 )
 import json
+import csv
+import io
+import re
 
 User = get_user_model()
 
 @login_required
 def lista_aluno(request):
-    if request.user.profile.user_type != 'student':
+    if not request.user.is_student:
         messages.error(request, 'Acesso não autorizado.')
         return redirect('blog:post_list')
     
@@ -33,28 +39,33 @@ def lista_aluno(request):
     
     # Buscar o progresso do aluno para cada lista
     progresso = {}
-    status_map = {}
     
     for lista in listas:
-        progresso_aluno = ProgressoAluno.objects.filter(
+        # Ordenar aprendizagens por código
+        aprendizagens = lista.aprendizagens.all().order_by('codigo')
+        
+        progressos = ProgressoAluno.objects.filter(
             aluno=request.user,
             lista_verificacao=lista
-        ).first()
+        )
         
-        if progresso_aluno:
-            progresso[lista.id] = progresso_aluno
-            # Converter os estados dos objetivos para o formato esperado
-            for objetivo in lista.objetivos.all():
-                status = progresso_aluno.get_estado_objetivo(objetivo.id)
-                status_map[objetivo.id] = {
-                    'status': status,
-                    'get_status_display': dict(ProgressoAluno.ESTADOS).get(status, 'Não Iniciado')
-                }
+        if progressos.exists():
+            progresso[lista.id] = {
+                'aprendizagens_concluidas': progressos.filter(estado='concluido').count(),
+                'progressos': {p.aprendizagem_id: p for p in progressos},
+                'aprendizagens': aprendizagens
+            }
+        else:
+            # Inicializar com progresso vazio para listas sem progresso
+            progresso[lista.id] = {
+                'aprendizagens_concluidas': 0,
+                'progressos': {},
+                'aprendizagens': aprendizagens
+            }
     
     context = {
         'listas': listas,
         'progresso': progresso,
-        'status_map': status_map,
     }
     return render(request, 'listas_verificacao/lista_aluno.html', context)
 
@@ -92,7 +103,7 @@ def detalhe_objetivo(request, objetivo_id):
 @login_required
 @require_POST
 def atualizar_status_objetivo(request, objetivo_id):
-    if request.user.profile.user_type != 'student':
+    if not request.user.is_student:
         return JsonResponse({'error': 'Acesso não autorizado.'}, status=403)
     
     objetivo = get_object_or_404(Objetivo, id=objetivo_id)
@@ -139,7 +150,7 @@ def atualizar_status_objetivo(request, objetivo_id):
 
 @login_required
 def dashboard_professor(request):
-    if request.user.profile.user_type != 'teacher':
+    if not request.user.is_teacher:
         messages.error(request, 'Acesso não autorizado.')
         return redirect('blog:post_list')
     
@@ -152,7 +163,7 @@ def dashboard_professor(request):
 
 @login_required
 def lista_turmas(request):
-    if request.user.profile.user_type != 'teacher':
+    if not request.user.is_teacher:
         messages.error(request, 'Acesso não autorizado.')
         return redirect('blog:post_list')
     
@@ -165,7 +176,7 @@ def lista_turmas(request):
 
 @login_required
 def criar_turma(request):
-    if request.user.profile.user_type != 'teacher':
+    if not request.user.is_teacher:
         messages.error(request, 'Acesso não autorizado.')
         return redirect('blog:post_list')
     
@@ -188,7 +199,7 @@ def criar_turma(request):
 
 @login_required
 def editar_turma(request, turma_id):
-    if request.user.profile.user_type != 'teacher':
+    if not request.user.is_teacher:
         messages.error(request, 'Acesso não autorizado.')
         return redirect('blog:post_list')
     
@@ -212,7 +223,7 @@ def editar_turma(request, turma_id):
 
 @login_required
 def excluir_turma(request, turma_id):
-    if request.user.profile.user_type != 'teacher':
+    if not request.user.is_teacher:
         messages.error(request, 'Acesso não autorizado.')
         return redirect('blog:post_list')
     
@@ -230,7 +241,7 @@ def excluir_turma(request, turma_id):
 
 @login_required
 def adicionar_aluno(request, turma_id):
-    if request.user.profile.user_type != 'teacher':
+    if not request.user.is_teacher:
         messages.error(request, 'Acesso não autorizado.')
         return redirect('blog:post_list')
     
@@ -240,20 +251,20 @@ def adicionar_aluno(request, turma_id):
         aluno_id = request.POST.get('aluno_id')
         aluno = get_object_or_404(User, id=aluno_id)
         
-        if aluno.profile.user_type != 'student':
+        if not aluno.is_student:
             messages.error(request, 'O usuário selecionado não é um aluno.')
-            return redirect('listas_verificacao:gerenciar_turma', turma_id=turma.id)
+            return redirect('listas_verificacao:dashboard_turma', turma_id=turma.id)
         
         turma.alunos.add(aluno)
         messages.success(request, f'Aluno {aluno.get_full_name()} adicionado à turma com sucesso!')
-        return redirect('listas_verificacao:gerenciar_turma', turma_id=turma.id)
+        return redirect('listas_verificacao:dashboard_turma', turma_id=turma.id)
     
     # Buscar alunos que não estão na turma
     alunos_disponiveis = User.objects.filter(
-        profile__user_type='student'
+        groups__name='student'
     ).exclude(
         turmas_aluno=turma
-    )
+    ).distinct()
     
     context = {
         'turma': turma,
@@ -263,7 +274,7 @@ def adicionar_aluno(request, turma_id):
 
 @login_required
 def remover_aluno(request, turma_id, aluno_id):
-    if request.user.profile.user_type != 'teacher':
+    if not request.user.is_teacher:
         messages.error(request, 'Acesso não autorizado.')
         return redirect('blog:post_list')
     
@@ -283,71 +294,119 @@ def remover_aluno(request, turma_id, aluno_id):
 
 @login_required
 def registrar_progresso(request, lista_id):
-    if request.user.profile.user_type != 'student':
+    if not request.user.is_student:
         messages.error(request, 'Acesso não autorizado.')
         return redirect('blog:post_list')
     
     lista = get_object_or_404(ListaVerificacao, id=lista_id)
     
-    # Verificar se o aluno tem acesso à lista
-    if not (lista.turma and request.user in lista.turma.alunos.all()):
-        messages.error(request, 'Você não tem acesso a esta lista de verificação.')
-        return redirect('listas_verificacao:lista_aluno')
-    
-    # Buscar ou criar o progresso do aluno
-    progresso, created = ProgressoAluno.objects.get_or_create(
-        aluno=request.user,
-        lista_verificacao=lista,
-        defaults={'objetivos_concluidos': []}
-    )
-    
     if request.method == 'POST':
-        objetivos_concluidos = request.POST.getlist('objetivos_concluidos')
-        progresso.objetivos_concluidos = objetivos_concluidos
-        progresso.save()
+        # Iterar sobre todas as aprendizagens da lista
+        for aprendizagem in lista.aprendizagens.all():
+            estado = request.POST.get(f'estado_{aprendizagem.id}')
+            if estado:
+                # Criar ou atualizar o progresso
+                progresso, created = ProgressoAluno.objects.update_or_create(
+                    aluno=request.user,
+                    lista_verificacao=lista,
+                    aprendizagem=aprendizagem,
+                    defaults={'estado': estado}
+                )
+                print(f"Progresso {'criado' if created else 'atualizado'} para {aprendizagem.codigo}: {estado}")
         
         messages.success(request, 'Progresso registrado com sucesso!')
         return redirect('listas_verificacao:lista_aluno')
     
+    # Buscar progresso existente
+    progresso = {}
+    progressos_existentes = ProgressoAluno.objects.filter(
+        aluno=request.user,
+        lista_verificacao=lista
+    )
+    for p in progressos_existentes:
+        progresso[p.aprendizagem_id] = p
+    
     context = {
         'lista': lista,
         'progresso': progresso,
+        'estados': ProgressoAluno.ESTADOS,
     }
     return render(request, 'listas_verificacao/registrar_progresso.html', context)
 
 @login_required
 def dashboard_turma(request, turma_id):
-    if request.user.profile.user_type != 'teacher':
+    if not request.user.is_teacher:
         messages.error(request, 'Acesso não autorizado.')
         return redirect('blog:post_list')
     
     turma = get_object_or_404(Turma, id=turma_id, professor=request.user)
+    
+    # Buscar todas as listas da turma
     listas = ListaVerificacao.objects.filter(turma=turma)
     
-    # Calcular progresso geral da turma
-    progresso_turma = {}
+    # Buscar todos os alunos da turma
+    alunos = turma.alunos.all()
+    total_alunos = alunos.count()
+    
+    # Calcular progresso para cada lista
+    progresso_listas = []
     for lista in listas:
-        progressos = ProgressoAluno.objects.filter(lista_verificacao=lista)
-        total_alunos = turma.alunos.count()
+        progressos = ProgressoAluno.objects.filter(
+            lista_verificacao=lista,
+            aluno__in=alunos
+        )
+        
+        # Calcular progresso médio da lista
         if total_alunos > 0:
-            progresso_medio = sum(p.porcentagem_conclusao for p in progressos) / total_alunos
-            progresso_turma[lista.id] = {
-                'lista': lista,
-                'progresso_medio': progresso_medio,
-                'total_alunos': total_alunos,
-                'alunos_concluidos': sum(1 for p in progressos if p.porcentagem_conclusao == 100)
-            }
+            total_aprendizagens = lista.aprendizagens.count()
+            if total_aprendizagens > 0:
+                progresso_medio = 0
+                for aluno in alunos:
+                    progressos_aluno = progressos.filter(aluno=aluno)
+                    aprendizagens_concluidas = progressos_aluno.filter(estado='concluido').count()
+                    progresso_medio += (aprendizagens_concluidas / total_aprendizagens) * 100
+                progresso_medio = progresso_medio / total_alunos
+            else:
+                progresso_medio = 0
+        else:
+            progresso_medio = 0
+        
+        progresso_listas.append({
+            'lista': lista,
+            'progresso_medio': round(progresso_medio, 1),
+            'total_alunos': total_alunos,
+            'alunos_concluidos': progressos.filter(estado='concluido').count()
+        })
+    
+    # Calcular progresso geral da turma
+    if total_alunos > 0 and listas.exists():
+        total_aprendizagens = sum(lista.aprendizagens.count() for lista in listas)
+        if total_aprendizagens > 0:
+            progresso_geral = 0
+            for aluno in alunos:
+                progressos_aluno = ProgressoAluno.objects.filter(
+                    aluno=aluno,
+                    lista_verificacao__in=listas
+                )
+                aprendizagens_concluidas = progressos_aluno.filter(estado='concluido').count()
+                progresso_geral += (aprendizagens_concluidas / total_aprendizagens) * 100
+            progresso_geral = progresso_geral / total_alunos
+        else:
+            progresso_geral = 0
+    else:
+        progresso_geral = 0
     
     context = {
         'turma': turma,
-        'listas': listas,
-        'progresso_turma': progresso_turma,
+        'listas': progresso_listas,
+        'total_alunos': total_alunos,
+        'progresso_geral': round(progresso_geral, 1),
     }
     return render(request, 'listas_verificacao/dashboard_turma.html', context)
 
 @login_required
 def gerenciar_categorias(request):
-    if request.user.profile.user_type != 'teacher':
+    if not request.user.is_teacher:
         messages.error(request, 'Acesso não autorizado.')
         return redirect('blog:post_list')
     
@@ -370,7 +429,7 @@ def gerenciar_categorias(request):
 
 @login_required
 def gerenciar_objetivos_predefinidos(request):
-    if request.user.profile.user_type != 'teacher':
+    if not request.user.is_teacher:
         messages.error(request, 'Acesso não autorizado.')
         return redirect('blog:post_list')
     
@@ -393,28 +452,37 @@ def gerenciar_objetivos_predefinidos(request):
 
 @login_required
 def criar_lista_verificacao(request):
-    if request.user.profile.user_type != 'teacher':
+    if not request.user.is_teacher:
         messages.error(request, 'Acesso não autorizado.')
         return redirect('blog:post_list')
+    
+    # Obter a turma do parâmetro GET se existir
+    turma_id = request.GET.get('turma')
+    turma = None
+    if turma_id:
+        turma = get_object_or_404(Turma, id=turma_id, professor=request.user)
     
     if request.method == 'POST':
         form = ListaVerificacaoForm(request.POST)
         if form.is_valid():
             lista = form.save()
             messages.success(request, 'Lista de verificação criada com sucesso!')
-            return redirect('listas_verificacao:dashboard_turma', turma_id=lista.turma.id)
+            if lista.turma:
+                return redirect('listas_verificacao:dashboard_turma', turma_id=lista.turma.id)
+            return redirect('listas_verificacao:dashboard_professor')
     else:
-        form = ListaVerificacaoForm()
+        form = ListaVerificacaoForm(initial={'turma': turma} if turma else None)
     
     context = {
         'form': form,
         'titulo': 'Criar Nova Lista de Verificação',
+        'turma': turma,
     }
     return render(request, 'listas_verificacao/form_lista_verificacao.html', context)
 
 @login_required
 def editar_lista_verificacao(request, lista_id):
-    if request.user.profile.user_type != 'teacher':
+    if not request.user.is_teacher:
         messages.error(request, 'Acesso não autorizado.')
         return redirect('blog:post_list')
     
@@ -438,7 +506,7 @@ def editar_lista_verificacao(request, lista_id):
 
 @login_required
 def excluir_lista_verificacao(request, lista_id):
-    if request.user.profile.user_type != 'teacher':
+    if not request.user.is_teacher:
         messages.error(request, 'Acesso não autorizado.')
         return redirect('blog:post_list')
     
@@ -457,7 +525,7 @@ def excluir_lista_verificacao(request, lista_id):
 
 @login_required
 def editar_categoria(request, categoria_id):
-    if request.user.profile.user_type != 'teacher':
+    if not request.user.is_teacher:
         messages.error(request, 'Acesso não autorizado.')
         return redirect('blog:post_list')
     
@@ -481,7 +549,7 @@ def editar_categoria(request, categoria_id):
 
 @login_required
 def excluir_categoria(request, categoria_id):
-    if request.user.profile.user_type != 'teacher':
+    if not request.user.is_teacher:
         messages.error(request, 'Acesso não autorizado.')
         return redirect('blog:post_list')
     
@@ -499,7 +567,7 @@ def excluir_categoria(request, categoria_id):
 
 @login_required
 def editar_objetivo_predefinido(request, objetivo_id):
-    if request.user.profile.user_type != 'teacher':
+    if not request.user.is_teacher:
         messages.error(request, 'Acesso não autorizado.')
         return redirect('blog:post_list')
     
@@ -523,7 +591,7 @@ def editar_objetivo_predefinido(request, objetivo_id):
 
 @login_required
 def excluir_objetivo_predefinido(request, objetivo_id):
-    if request.user.profile.user_type != 'teacher':
+    if not request.user.is_teacher:
         messages.error(request, 'Acesso não autorizado.')
         return redirect('blog:post_list')
     
@@ -538,3 +606,129 @@ def excluir_objetivo_predefinido(request, objetivo_id):
         'objetivo': objetivo,
     }
     return render(request, 'listas_verificacao/confirmar_exclusao_objetivo.html', context)
+
+def extrair_codigo_dominio(codigo_aprendizagem):
+    """Extrai o código do domínio do código da aprendizagem essencial"""
+    match = re.match(r'([A-Z]+)\d+', codigo_aprendizagem)
+    if match:
+        return match.group(1)
+    return None
+
+@login_required
+def importar_aprendizagens(request):
+    if not request.user.is_teacher:
+        messages.error(request, 'Acesso não autorizado.')
+        return redirect('blog:post_list')
+    
+    if request.method == 'POST':
+        form = ImportarAprendizagensForm(request.POST, request.FILES)
+        if form.is_valid():
+            try:
+                disciplina = form.cleaned_data['disciplina']
+                ano_escolar = form.cleaned_data['ano_escolar']
+                arquivo_csv = request.FILES['arquivo_csv']
+                
+                # Ler o arquivo CSV
+                csv_file = io.TextIOWrapper(arquivo_csv, encoding='iso-8859-1')
+                csv_reader = csv.reader(csv_file)
+                
+                # Criar ou obter domínios
+                dominios = {}
+                for row in csv_reader:
+                    if not row:  # Pular linhas vazias
+                        continue
+                    
+                    codigo_aprendizagem = row[0].strip()
+                    descricao = row[1].strip()
+                    
+                    # Extrair código do domínio
+                    codigo_dominio = extrair_codigo_dominio(codigo_aprendizagem)
+                    if not codigo_dominio:
+                        continue
+                    
+                    # Criar ou obter domínio
+                    dominio, _ = Domínio.objects.get_or_create(
+                        codigo=codigo_dominio,
+                        disciplina=disciplina,
+                        defaults={'nome': f'Domínio {codigo_dominio}'}
+                    )
+                    
+                    # Criar aprendizagem essencial
+                    AprendizagemEssencial.objects.create(
+                        codigo=codigo_aprendizagem,
+                        descricao=descricao,
+                        disciplina=disciplina,
+                        dominio=dominio,
+                        ano_escolar=ano_escolar
+                    )
+                
+                messages.success(request, 'Aprendizagens essenciais importadas com sucesso!')
+                return redirect('listas_verificacao:gerenciar_aprendizagens')
+            
+            except Exception as e:
+                messages.error(request, f'Erro ao importar aprendizagens: {str(e)}')
+    else:
+        form = ImportarAprendizagensForm()
+    
+    context = {
+        'form': form,
+        'titulo': 'Importar Aprendizagens Essenciais'
+    }
+    return render(request, 'listas_verificacao/importar_aprendizagens.html', context)
+
+@login_required
+def gerenciar_aprendizagens(request):
+    if not request.user.is_teacher:
+        messages.error(request, 'Acesso não autorizado.')
+        return redirect('blog:post_list')
+    
+    disciplinas = Disciplina.objects.all()
+    aprendizagens = AprendizagemEssencial.objects.all().order_by('disciplina', 'ano_escolar', 'ordem')
+    
+    context = {
+        'disciplinas': disciplinas,
+        'aprendizagens': aprendizagens,
+    }
+    return render(request, 'listas_verificacao/gerenciar_aprendizagens.html', context)
+
+@login_required
+def editar_aprendizagem(request, aprendizagem_id):
+    if not request.user.is_teacher:
+        messages.error(request, 'Acesso não autorizado.')
+        return redirect('blog:post_list')
+    
+    aprendizagem = get_object_or_404(AprendizagemEssencial, id=aprendizagem_id)
+    
+    if request.method == 'POST':
+        form = AprendizagemEssencialForm(request.POST, instance=aprendizagem)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Aprendizagem essencial atualizada com sucesso!')
+            return redirect('listas_verificacao:gerenciar_aprendizagens')
+    else:
+        form = AprendizagemEssencialForm(instance=aprendizagem)
+    
+    context = {
+        'form': form,
+        'aprendizagem': aprendizagem,
+        'titulo': 'Editar Aprendizagem Essencial'
+    }
+    return render(request, 'listas_verificacao/form_aprendizagem.html', context)
+
+@login_required
+def excluir_aprendizagem(request, aprendizagem_id):
+    if not request.user.is_teacher:
+        messages.error(request, 'Acesso não autorizado.')
+        return redirect('blog:post_list')
+    
+    aprendizagem = get_object_or_404(AprendizagemEssencial, id=aprendizagem_id)
+    
+    if request.method == 'POST':
+        aprendizagem.delete()
+        messages.success(request, 'Aprendizagem essencial excluída com sucesso!')
+        return redirect('listas_verificacao:gerenciar_aprendizagens')
+    
+    context = {
+        'aprendizagem': aprendizagem,
+    }
+    return render(request, 'listas_verificacao/confirmar_exclusao_aprendizagem.html', context)

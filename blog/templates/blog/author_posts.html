@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{% load static %}
+{% load blog_filters %}
 
 {% block title %}Posts de {{ author.get_full_name|default:author.username }} - Blog - Infantinho 2.0{% endblock %}
 
@@ -45,9 +47,7 @@
                     <h5 class="card-title">Tags Mais Usadas</h5>
                     <div class="tags">
                         {% for tag in author_tags %}
-                        <a href="{% url 'blog:tag_detail' tag.slug %}" class="badge bg-secondary text-decoration-none">
-                            {{ tag.name }} ({{ tag.posts_count }})
-                        </a>
+                        <a href="{% url 'blog:tag_detail' tag.slug %}" class="badge bg-secondary text-decoration-none">{{ tag.name }}</a>
                         {% endfor %}
                     </div>
                 </div>

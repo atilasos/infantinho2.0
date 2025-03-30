@@ -25,4 +25,8 @@ urlpatterns = [
     path('listas/criar/', views.criar_lista_verificacao, name='criar_lista_verificacao'),
     path('listas/<int:lista_id>/editar/', views.editar_lista_verificacao, name='editar_lista_verificacao'),
     path('listas/<int:lista_id>/excluir/', views.excluir_lista_verificacao, name='excluir_lista_verificacao'),
+    path('aprendizagens/', views.gerenciar_aprendizagens, name='gerenciar_aprendizagens'),
+    path('aprendizagens/importar/', views.importar_aprendizagens, name='importar_aprendizagens'),
+    path('aprendizagens/<int:aprendizagem_id>/editar/', views.editar_aprendizagem, name='editar_aprendizagem'),
+    path('aprendizagens/<int:aprendizagem_id>/excluir/', views.excluir_aprendizagem, name='excluir_aprendizagem'),
 ] 

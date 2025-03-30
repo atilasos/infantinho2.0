@@ -155,49 +155,63 @@ class BlogAgent:
             "tags": ["etiqueta1", "etiqueta2", "etiqueta3", "etiqueta4", "etiqueta5"]
         }}"""
         
-        try:
-            # Usa diretamente o adaptador Ollama
-            response = self.ollama.chat_completion([{"role": "user", "content": prompt}])
-            
-            # Extrai o JSON da resposta
-            json_str = response.get("response", "").strip()
-            
-            # Remove marcadores de código se presentes
-            if json_str.startswith("```json"):
-                json_str = json_str[7:]
-            if json_str.endswith("```"):
-                json_str = json_str[:-4]
-            
-            # Remove espaços em branco extras
-            json_str = json_str.strip()
-            
-            # Tenta fazer o parse do JSON
+        max_retries = 3
+        retry_delay = 1  # segundos
+        
+        for attempt in range(max_retries):
             try:
-                suggestions = json.loads(json_str)
-            except json.JSONDecodeError:
-                raise ValueError("A resposta não é um JSON válido")
-            
-            # Validação básica das sugestões
-            if not isinstance(suggestions, dict):
-                raise ValueError("A resposta não é um dicionário")
-            if 'category' not in suggestions:
-                raise ValueError("A resposta não contém uma categoria")
-            if 'tags' not in suggestions:
-                raise ValueError("A resposta não contém tags")
-            if not suggestions['category']:
-                raise ValueError("A categoria está vazia")
-            if not suggestions['tags']:
-                raise ValueError("As tags estão vazias")
-            
-            # Limpa e valida as tags
-            suggestions['tags'] = [tag.strip() for tag in suggestions['tags'] if tag.strip()]
-            
-            return suggestions
-        except Exception as e:
-            return {
-                "category": "Geral",
-                "tags": ["educação", "infância", "aprendizagem", "desenvolvimento", "crianças"]
-            }
+                # Usa diretamente o adaptador Ollama com timeout
+                response = self.ollama.chat_completion(
+                    [{"role": "user", "content": prompt}],
+                    timeout=30  # 30 segundos de timeout
+                )
+                
+                # Extrai o JSON da resposta
+                json_str = response.get("response", "").strip()
+                
+                # Remove marcadores de código se presentes
+                if json_str.startswith("```json"):
+                    json_str = json_str[7:]
+                if json_str.endswith("```"):
+                    json_str = json_str[:-4]
+                
+                # Remove espaços em branco extras
+                json_str = json_str.strip()
+                
+                # Tenta fazer o parse do JSON
+                try:
+                    suggestions = json.loads(json_str)
+                except json.JSONDecodeError:
+                    raise ValueError("A resposta não é um JSON válido")
+                
+                # Validação básica das sugestões
+                if not isinstance(suggestions, dict):
+                    raise ValueError("A resposta não é um dicionário")
+                if 'category' not in suggestions:
+                    raise ValueError("A resposta não contém uma categoria")
+                if 'tags' not in suggestions:
+                    raise ValueError("A resposta não contém tags")
+                if not suggestions['category']:
+                    raise ValueError("A categoria está vazia")
+                if not suggestions['tags']:
+                    raise ValueError("As tags estão vazias")
+                
+                # Limpa e valida as tags
+                suggestions['tags'] = [tag.strip() for tag in suggestions['tags'] if tag.strip()]
+                
+                return suggestions
+                
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    import time
+                    time.sleep(retry_delay)
+                    continue
+                else:
+                    print(f"Erro ao gerar categorias e tags após {max_retries} tentativas: {str(e)}")
+                    return {
+                        "category": "Geral",
+                        "tags": ["educação", "infância", "aprendizagem", "desenvolvimento", "crianças"]
+                    }
 
     def generate_excerpt(self, content: str, max_length: int = 200) -> str:
         """Generate a concise summary of the content."""
@@ -210,12 +224,21 @@ class BlogAgent:
         
         Responde apenas com o resumo."""
         
-        try:
-            result = Runner.run_sync(self.agent, prompt)
-            return result.final_output[:max_length]
-        except Exception as e:
-            print(f"Erro ao gerar excerpt: {str(e)}")
-            return content[:max_length] + "..."
+        max_retries = 3
+        retry_delay = 1  # segundos
+        
+        for attempt in range(max_retries):
+            try:
+                result = Runner.run_sync(self.agent, prompt)
+                return result.final_output[:max_length]
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    import time
+                    time.sleep(retry_delay)
+                    continue
+                else:
+                    print(f"Erro ao gerar excerpt após {max_retries} tentativas: {str(e)}")
+                    return content[:max_length] + "..."
 
     def suggest_title(self, content: str) -> str:
         """Generate a catchy title for the content."""
@@ -228,12 +251,21 @@ class BlogAgent:
         
         Responde apenas com o título."""
         
-        try:
-            result = Runner.run_sync(self.agent, prompt)
-            return result.final_output.strip()
-        except Exception as e:
-            print(f"Erro ao gerar título: {str(e)}")
-            return "Novo Post"
+        max_retries = 3
+        retry_delay = 1  # segundos
+        
+        for attempt in range(max_retries):
+            try:
+                result = Runner.run_sync(self.agent, prompt)
+                return result.final_output.strip()
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    import time
+                    time.sleep(retry_delay)
+                    continue
+                else:
+                    print(f"Erro ao gerar título após {max_retries} tentativas: {str(e)}")
+                    return "Novo Post"
 
 # Create a singleton instance
 blog_agent = BlogAgent() 

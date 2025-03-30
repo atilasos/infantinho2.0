@@ -2,148 +2,123 @@
 {% load static %}
 {% load listas_filters %}
 
-{% block title %}Dashboard - {{ turma.nome }}{% endblock %}
+{% block title %}Dashboard da Turma - {{ turma.nome }} - Infantinho 2.0{% endblock %}
 
 {% block content %}
 <div class="container">
+    <!-- Cabeçalho -->
     <div class="row mb-4">
         <div class="col">
-            <h1>Dashboard da Turma</h1>
-            <p class="lead">{{ turma.nome }} - {{ turma.ano_escolar }}º ano - {{ turma.disciplina }}</p>
+            <h1 class="display-4">{{ turma.nome }}</h1>
+            <p class="lead">Dashboard da Turma</p>
         </div>
         <div class="col-auto">
-            <a href="{% url 'listas_verificacao:lista_turmas' %}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Voltar
-            </a>
+            <div class="btn-group">
+                <a href="{% url 'listas_verificacao:criar_lista_verificacao' %}?turma={{ turma.id }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nova Lista
+                </a>
+                <a href="{% url 'listas_verificacao:gerenciar_aprendizagens' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-tasks"></i> Gerenciar Aprendizagens
+                </a>
+                <a href="{% url 'listas_verificacao:lista_turmas' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+            </div>
         </div>
     </div>
 
-    {% if not turma.alunos.exists %}
-        <div class="alert alert-info">
-            <p class="mb-0">
-                <i class="fas fa-info-circle"></i> 
-                Esta turma ainda não possui alunos. 
-                <a href="{% url 'listas_verificacao:adicionar_aluno' turma.id %}" class="alert-link">
-                    Clique aqui para adicionar alunos à turma.
-                </a>
-            </p>
-        </div>
-    {% else %}
-        <!-- Progresso por Lista -->
-        <div class="row mb-4">
-            <div class="col">
-                <h2>Progresso por Lista</h2>
-            </div>
-        </div>
-
-        <div class="row">
-            {% for lista in listas %}
-                {% with progresso=progresso_turma|get_item:lista.id %}
-                    <div class="col-md-6 mb-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">{{ lista.titulo }}</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-hover">
-                                        <thead>
-                                            <tr>
-                                                <th>Métrica</th>
-                                                <th>Valor</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>Progresso Médio</td>
-                                                <td>
-                                                    <div class="progress">
-                                                        <div class="progress-bar" role="progressbar" 
-                                                             style="width: {{ progresso.progresso_medio }}%"
-                                                             aria-valuenow="{{ progresso.progresso_medio }}" 
-                                                             aria-valuemin="0" 
-                                                             aria-valuemax="100">
-                                                            {{ progresso.progresso_medio|floatformat:1 }}%
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td>Total de Alunos</td>
-                                                <td>{{ progresso.total_alunos }}</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Alunos Concluídos</td>
-                                                <td>{{ progresso.alunos_concluidos }}</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                {% endwith %}
-            {% endfor %}
-        </div>
-
-        <!-- Resumo Geral -->
-        <div class="row mb-4">
-            <div class="col">
-                <h2>Resumo Geral</h2>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Métrica</th>
-                                        <th>Valor</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Progresso Médio Geral</td>
-                                        <td>
-                                            {% with media=0 %}
-                                                {% for lista in listas %}
-                                                    {% with progresso=progresso_turma|get_item:lista.id %}
-                                                        {% with media=media|add:progresso.progresso_medio %}{% endwith %}
-                                                    {% endwith %}
-                                                {% endfor %}
-                                                {% with media=media|div:listas.count %}
-                                                    <div class="progress">
-                                                        <div class="progress-bar" role="progressbar" 
-                                                             style="width: {{ media }}%"
-                                                             aria-valuenow="{{ media }}" 
-                                                             aria-valuemin="0" 
-                                                             aria-valuemax="100">
-                                                            {{ media|floatformat:1 }}%
-                                                        </div>
-                                                    </div>
-                                                {% endwith %}
-                                            {% endwith %}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Total de Alunos</td>
-                                        <td>{{ turma.alunos.count }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Total de Listas</td>
-                                        <td>{{ listas.count }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+    <!-- Resumo Geral -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Progresso Geral</h5>
+                    <div class="progress mb-2">
+                        <div class="progress-bar" role="progressbar" style="width: {{ progresso_geral }}%">
+                            {{ progresso_geral }}%
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    {% endif %}
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total de Alunos</h5>
+                    <p class="card-text display-4">{{ total_alunos }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total de Listas</h5>
+                    <p class="card-text display-4">{{ listas|length }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progresso por Lista -->
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Progresso por Lista</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for lista_info in listas %}
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">{{ lista_info.lista.titulo }}</h5>
+                    <div class="btn-group">
+                        <a href="{% url 'listas_verificacao:editar_lista_verificacao' lista_info.lista.id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{% url 'listas_verificacao:excluir_lista_verificacao' lista_info.lista.id %}" class="btn btn-sm btn-outline-danger">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="progress mb-3">
+                        <div class="progress-bar" role="progressbar" style="width: {{ lista_info.progresso_medio }}%">
+                            {{ lista_info.progresso_medio }}%
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">
+                            {{ lista_info.alunos_concluidos }} alunos concluíram
+                        </small>
+                        <small class="text-muted">
+                            Total: {{ lista_info.total_alunos }} alunos
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> Nenhuma lista de verificação criada ainda.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Adicionar animação suave ao scroll
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+    });
+</script>
 {% endblock %} 

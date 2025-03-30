@@ -26,30 +26,39 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 media/
-static/
 
 # Virtual Environment
 venv/
 env/
 ENV/
 .env
-.venv/
+.venv
+env.bak/
+venv.bak/
 
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
+.cursor/
+
+# Local Development
+*.csv
+*.xlsx
+*.xls
+*.db
+*.sqlite3
+*.sqlite
+
+# OS
 .DS_Store
+Thumbs.db
 
 # Project specific
 *.bak
 *.tmp
 *.temp
-
-# Database
-*.sqlite3
-*.db
 
 # Media files
 media/
@@ -64,7 +73,6 @@ static/
 logs/
 
 # OS generated files
-.DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
