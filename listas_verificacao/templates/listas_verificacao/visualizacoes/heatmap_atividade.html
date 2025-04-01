@@ -1,0 +1,114 @@
+{% extends 'listas_verificacao/visualizacoes/base.html' %}
+
+{% block title %}Heatmap de Atividade - {{ turma.nome }} - Infantinho 2.0{% endblock %}
+
+{% block visualization_content %}
+<div class="visualization-container">
+    <div class="visualization-header">
+        <h2 class="visualization-title">Padrões de Atividade da Turma</h2>
+        <div class="visualization-actions">
+            <button class="btn btn-outline-primary btn-sm" onclick="toggleTooltip()">
+                <i class="fas fa-info-circle"></i> Alternar Tooltip
+            </button>
+            <button class="btn btn-outline-primary btn-sm" onclick="toggleLegend()">
+                <i class="fas fa-list"></i> Alternar Legenda
+            </button>
+        </div>
+    </div>
+    
+    <div class="visualization-content">
+        <div class="visualization-loading">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+        </div>
+        <canvas id="heatmapChart"></canvas>
+    </div>
+    
+    <div class="visualization-legend" id="heatmapLegend">
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #e8f5e9;"></div>
+            <span class="legend-label">Baixa Atividade</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #c8e6c9;"></div>
+            <span class="legend-label">Média Atividade</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #a5d6a7;"></div>
+            <span class="legend-label">Alta Atividade</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #81c784;"></div>
+            <span class="legend-label">Muito Alta Atividade</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Dados do heatmap
+    const chartData = {
+        labels: {{ dias_semana|safe }},
+        datasets: {{ datasets|safe }}
+    };
+    
+    // Configuração do heatmap
+    const config = {
+        type: 'matrix',
+        data: chartData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    type: 'category',
+                    offset: true,
+                    grid: {
+                        display: false
+                    }
+                },
+                y: {
+                    type: 'category',
+                    offset: true,
+                    grid: {
+                        display: false
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        title: function(context) {
+                            return context[0].label + ' - ' + context[0].raw.v;
+                        },
+                        label: function(context) {
+                            return context.raw.c + ' atividades';
+                        }
+                    }
+                }
+            }
+        }
+    };
+    
+    // Criar o heatmap
+    const canvas = document.getElementById('heatmapChart');
+    const chart = createResponsiveChart(canvas, config);
+    
+    // Funções de controle
+    function toggleTooltip() {
+        chart.options.plugins.tooltip.enabled = !chart.options.plugins.tooltip.enabled;
+        chart.update();
+    }
+    
+    function toggleLegend() {
+        const legend = document.getElementById('heatmapLegend');
+        legend.style.display = legend.style.display === 'none' ? 'flex' : 'none';
+    }
+    
+    // Ocultar loading após carregar o heatmap
+    toggleLoading(document.querySelector('.visualization-container'), false);
+</script>
+{% endblock %} 

@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<style>
+    .visualization-container {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .visualization-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .visualization-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #333;
+        margin: 0;
+    }
+    
+    .visualization-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .visualization-content {
+        position: relative;
+        min-height: 300px;
+    }
+    
+    .visualization-loading {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+    }
+    
+    .visualization-error {
+        color: #dc3545;
+        text-align: center;
+        padding: 20px;
+    }
+    
+    .visualization-legend {
+        margin-top: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        justify-content: center;
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .legend-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 2px;
+    }
+    
+    .legend-label {
+        font-size: 0.9rem;
+        color: #666;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Configuração global do Chart.js
+    Chart.defaults.font.family = "'Roboto', sans-serif";
+    Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+    Chart.defaults.plugins.tooltip.padding = 10;
+    Chart.defaults.plugins.tooltip.cornerRadius = 4;
+    
+    // Função para criar um gráfico responsivo
+    function createResponsiveChart(canvas, config) {
+        return new Chart(canvas, {
+            ...config,
+            options: {
+                ...config.options,
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
+                }
+            }
+        });
+    }
+    
+    // Função para atualizar um gráfico com novos dados
+    function updateChart(chart, newData) {
+        chart.data = newData;
+        chart.update();
+    }
+    
+    // Função para mostrar/ocultar loading
+    function toggleLoading(container, show) {
+        const loading = container.querySelector('.visualization-loading');
+        if (loading) {
+            loading.style.display = show ? 'block' : 'none';
+        }
+    }
+    
+    // Função para mostrar erro
+    function showError(container, message) {
+        const content = container.querySelector('.visualization-content');
+        content.innerHTML = `<div class="visualization-error">${message}</div>`;
+    }
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    {% block visualization_content %}{% endblock %}
+</div>
+{% endblock %} 

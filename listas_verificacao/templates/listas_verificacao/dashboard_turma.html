@@ -9,8 +9,8 @@
     <!-- Cabeçalho -->
     <div class="row mb-4">
         <div class="col">
-            <h1 class="display-4">{{ turma.nome }}</h1>
-            <p class="lead">Dashboard da Turma</p>
+            <h1>Dashboard da Turma</h1>
+            <h2 class="h4 text-muted">{{ turma.nome }}</h2>
         </div>
         <div class="col-auto">
             <div class="btn-group">
@@ -22,6 +22,44 @@
                 </a>
                 <a href="{% url 'listas_verificacao:lista_turmas' %}" class="btn btn-outline-secondary">
                     <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+            </div>
+            <div class="btn-group ml-2">
+                <a href="{% url 'listas_verificacao:relatorio_progresso_turma' turma.id %}" class="btn btn-primary">
+                    <i class="fas fa-chart-bar"></i> Relatório de Progresso
+                </a>
+                <a href="{% url 'listas_verificacao:relatorio_tempo_conclusao' turma.id %}" class="btn btn-primary">
+                    <i class="fas fa-clock"></i> Relatório de Tempo
+                </a>
+                <a href="{% url 'listas_verificacao:relatorio_objetivos_dificeis' turma.id %}" class="btn btn-primary">
+                    <i class="fas fa-exclamation-triangle"></i> Relatório de Dificuldades
+                </a>
+                <a href="{% url 'listas_verificacao:relatorio_aprendizagens_pendentes' turma.id %}" class="btn btn-primary">
+                    <i class="fas fa-check-circle"></i> Relatório de Pendências
+                </a>
+                <a href="{% url 'listas_verificacao:relatorio_tendencias_progresso' turma.id %}" class="btn btn-primary">
+                    <i class="fas fa-chart-line"></i> Relatório de Tendências
+                </a>
+                <a href="{% url 'listas_verificacao:relatorio_analise_preditiva' turma.id %}" class="btn btn-primary">
+                    <i class="fas fa-chart-pie"></i> Análise Preditiva
+                </a>
+                <a href="{% url 'listas_verificacao:relatorio_engajamento' turma.id %}" class="btn btn-primary">
+                    <i class="fas fa-users"></i> Relatório de Engajamento
+                </a>
+                <a href="{% url 'listas_verificacao:relatorio_cooperacao' turma.id %}" class="btn btn-primary">
+                    <i class="fas fa-handshake"></i> Relatório de Cooperação
+                </a>
+                <a href="{% url 'listas_verificacao:visualizacao_progresso_turma' turma.id %}" class="btn btn-primary">
+                    <i class="fas fa-chart-line"></i> Visualização do Progresso
+                </a>
+                <a href="{% url 'listas_verificacao:visualizacao_heatmap_atividade' turma.id %}" class="btn btn-primary">
+                    <i class="fas fa-calendar-heat"></i> Heatmap de Atividade
+                </a>
+                <a href="{% url 'listas_verificacao:visualizacao_tendencias' turma.id %}" class="btn btn-primary">
+                    <i class="fas fa-chart-line"></i> Gráficos de Tendência
+                </a>
+                <a href="{% url 'listas_verificacao:dashboard_interativo' turma.id %}" class="btn btn-primary">
+                    <i class="fas fa-chart-pie"></i> Dashboard Interativo
                 </a>
             </div>
         </div>
@@ -105,6 +143,74 @@
             </div>
         </div>
         {% endfor %}
+    </div>
+
+    <!-- Lista de Alunos -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title mb-0">Alunos</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Progresso</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for aluno in turma.alunos.all %}
+                        <tr>
+                            <td>{{ aluno.get_full_name }}</td>
+                            <td>
+                                {% with progresso=aluno.progresso_geral %}
+                                <div class="progress">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: {{ progresso }}%"
+                                         aria-valuenow="{{ progresso }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        {{ progresso }}%
+                                    </div>
+                                </div>
+                                {% endwith %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'listas_verificacao:relatorio_progresso_aluno' turma.id aluno.id %}" 
+                                       class="btn btn-sm btn-outline-primary" 
+                                       data-toggle="tooltip" 
+                                       title="Ver relatório detalhado">
+                                        <i class="fas fa-chart-bar"></i>
+                                    </a>
+                                    <a href="{% url 'listas_verificacao:relatorio_dificuldades_aluno' turma.id aluno.id %}" 
+                                       class="btn btn-sm btn-outline-warning" 
+                                       data-toggle="tooltip" 
+                                       title="Ver dificuldades">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </a>
+                                    <a href="{% url 'listas_verificacao:remover_aluno' turma.id aluno.id %}" 
+                                       class="btn btn-sm btn-outline-danger" 
+                                       data-toggle="tooltip" 
+                                       title="Remover aluno">
+                                        <i class="fas fa-user-minus"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center">
+                                <p class="text-muted mb-0">Nenhum aluno cadastrado na turma.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

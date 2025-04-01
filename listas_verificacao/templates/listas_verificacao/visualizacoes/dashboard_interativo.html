@@ -1,0 +1,403 @@
+{% extends 'listas_verificacao/visualizacoes/base.html' %}
+
+{% block title %}Dashboard Interativo - {{ turma.nome }} - Infantinho 2.0{% endblock %}
+
+{% block visualization_content %}
+<div class="row">
+    <!-- Filtros e Controles -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label class="form-label">Período</label>
+                        <select class="form-select" id="periodoFilter" onchange="atualizarVisualizacoes()">
+                            <option value="7">Últimos 7 dias</option>
+                            <option value="30">Últimos 30 dias</option>
+                            <option value="90">Últimos 90 dias</option>
+                            <option value="365">Último ano</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Lista</label>
+                        <select class="form-select" id="listaFilter" onchange="atualizarVisualizacoes()">
+                            <option value="todas">Todas as Listas</option>
+                            {% for lista in listas %}
+                            <option value="{{ lista.id }}">{{ lista.titulo }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Aluno</label>
+                        <select class="form-select" id="alunoFilter" onchange="atualizarVisualizacoes()">
+                            <option value="todos">Todos os Alunos</option>
+                            {% for aluno in alunos %}
+                            <option value="{{ aluno.id }}">{{ aluno.get_full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Visualização</label>
+                        <select class="form-select" id="visualizacaoFilter" onchange="alternarVisualizacao()">
+                            <option value="progresso">Progresso</option>
+                            <option value="dificuldades">Dificuldades</option>
+                            <option value="engajamento">Engajamento</option>
+                            <option value="cooperacao">Cooperação</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Métricas Principais -->
+    <div class="col-md-3 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Progresso Geral</h5>
+                <div class="display-4">{{ progresso_geral }}%</div>
+                <div class="progress mt-2">
+                    <div class="progress-bar" role="progressbar" style="width: {{ progresso_geral }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Alunos Ativos</h5>
+                <div class="display-4">{{ alunos_ativos }}/{{ total_alunos }}</div>
+                <div class="progress mt-2">
+                    <div class="progress-bar" role="progressbar" style="width: {{ percentual_alunos_ativos }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Listas Concluídas</h5>
+                <div class="display-4">{{ listas_concluidas }}/{{ total_listas }}</div>
+                <div class="progress mt-2">
+                    <div class="progress-bar" role="progressbar" style="width: {{ percentual_listas_concluidas }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Engajamento</h5>
+                <div class="display-4">{{ engajamento_medio }}%</div>
+                <div class="progress mt-2">
+                    <div class="progress-bar" role="progressbar" style="width: {{ engajamento_medio }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico Principal -->
+    <div class="col-md-8 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="visualization-container">
+                    <div class="visualization-header">
+                        <h2 class="visualization-title" id="graficoPrincipalTitulo">Progresso ao Longo do Tempo</h2>
+                        <div class="visualization-actions">
+                            <button class="btn btn-outline-primary btn-sm" onclick="toggleDataPoints('graficoPrincipal')">
+                                <i class="fas fa-dot-circle"></i> Alternar Pontos
+                            </button>
+                            <button class="btn btn-outline-primary btn-sm" onclick="toggleGrid('graficoPrincipal')">
+                                <i class="fas fa-border-all"></i> Alternar Grade
+                            </button>
+                        </div>
+                    </div>
+                    <div class="visualization-content">
+                        <div class="visualization-loading">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Carregando...</span>
+                            </div>
+                        </div>
+                        <canvas id="graficoPrincipal"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos Secundários -->
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="visualization-container">
+                    <div class="visualization-header">
+                        <h2 class="visualization-title">Distribuição de Progresso</h2>
+                    </div>
+                    <div class="visualization-content">
+                        <div class="visualization-loading">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Carregando...</span>
+                            </div>
+                        </div>
+                        <canvas id="graficoDistribuicao"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela de Dados -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="tabelaDados">
+                        <thead>
+                            <tr>
+                                <th>Aluno</th>
+                                <th>Progresso</th>
+                                <th>Dificuldades</th>
+                                <th>Engajamento</th>
+                                <th>Última Atividade</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for aluno in dados_alunos %}
+                            <tr>
+                                <td>{{ aluno.nome }}</td>
+                                <td>
+                                    <div class="progress">
+                                        <div class="progress-bar" role="progressbar" style="width: {{ aluno.progresso }}%">
+                                            {{ aluno.progresso }}%
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-warning" role="progressbar" style="width: {{ aluno.dificuldades }}%">
+                                            {{ aluno.dificuldades }}%
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ aluno.engajamento }}%">
+                                            {{ aluno.engajamento }}%
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ aluno.ultima_atividade }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Configuração comum para os gráficos
+    const commonConfig = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top'
+            },
+            tooltip: {
+                mode: 'index',
+                intersect: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    display: true,
+                    color: 'rgba(0, 0, 0, 0.1)'
+                }
+            },
+            x: {
+                grid: {
+                    display: true,
+                    color: 'rgba(0, 0, 0, 0.1)'
+                }
+            }
+        }
+    };
+
+    // Gráfico Principal
+    const graficoPrincipal = createResponsiveChart(
+        document.getElementById('graficoPrincipal'),
+        {
+            type: 'line',
+            data: {
+                labels: {{ datas|safe }},
+                datasets: {{ progresso_datasets|safe }}
+            },
+            options: {
+                ...commonConfig,
+                scales: {
+                    ...commonConfig.scales,
+                    y: {
+                        ...commonConfig.scales.y,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    );
+
+    // Gráfico de Distribuição
+    const graficoDistribuicao = createResponsiveChart(
+        document.getElementById('graficoDistribuicao'),
+        {
+            type: 'bar',
+            data: {
+                labels: ['0-20%', '21-40%', '41-60%', '61-80%', '81-100%'],
+                datasets: [{
+                    label: 'Alunos',
+                    data: {{ distribuicao_progresso|safe }},
+                    backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                    borderColor: 'rgb(75, 192, 192)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                ...commonConfig,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        }
+    );
+
+    // Funções de controle
+    function toggleDataPoints(chartId) {
+        const chart = window[chartId];
+        const showPoints = chart.options.elements.point.radius > 0;
+        chart.options.elements.point.radius = showPoints ? 0 : 4;
+        chart.options.elements.point.hoverRadius = showPoints ? 0 : 6;
+        chart.update();
+    }
+
+    function toggleGrid(chartId) {
+        const chart = window[chartId];
+        const showGrid = chart.options.scales.x.grid.display;
+        chart.options.scales.x.grid.display = !showGrid;
+        chart.options.scales.y.grid.display = !showGrid;
+        chart.update();
+    }
+
+    function atualizarVisualizacoes() {
+        const periodo = document.getElementById('periodoFilter').value;
+        const lista = document.getElementById('listaFilter').value;
+        const aluno = document.getElementById('alunoFilter').value;
+
+        // Fazer requisição AJAX para atualizar os dados
+        fetch(`/listas_verificacao/turma/{{ turma.id }}/dashboard-dados/?periodo=${periodo}&lista=${lista}&aluno=${aluno}`)
+            .then(response => response.json())
+            .then(data => {
+                // Atualizar gráficos com os novos dados
+                atualizarGraficos(data);
+            })
+            .catch(error => {
+                console.error('Erro ao atualizar dados:', error);
+                showError(document.querySelector('.visualization-container'), 'Erro ao carregar dados');
+            });
+    }
+
+    function alternarVisualizacao() {
+        const tipo = document.getElementById('visualizacaoFilter').value;
+        const titulo = document.getElementById('graficoPrincipalTitulo');
+        
+        // Atualizar título e dados do gráfico principal
+        switch(tipo) {
+            case 'progresso':
+                titulo.textContent = 'Progresso ao Longo do Tempo';
+                graficoPrincipal.data.datasets = {{ progresso_datasets|safe }};
+                break;
+            case 'dificuldades':
+                titulo.textContent = 'Dificuldades ao Longo do Tempo';
+                graficoPrincipal.data.datasets = {{ dificuldades_datasets|safe }};
+                break;
+            case 'engajamento':
+                titulo.textContent = 'Engajamento ao Longo do Tempo';
+                graficoPrincipal.data.datasets = {{ engajamento_datasets|safe }};
+                break;
+            case 'cooperacao':
+                titulo.textContent = 'Cooperação ao Longo do Tempo';
+                graficoPrincipal.data.datasets = {{ cooperacao_datasets|safe }};
+                break;
+        }
+        
+        graficoPrincipal.update();
+    }
+
+    function atualizarGraficos(data) {
+        // Atualizar gráfico principal
+        graficoPrincipal.data.labels = data.datas;
+        graficoPrincipal.data.datasets = data.datasets;
+        graficoPrincipal.update();
+
+        // Atualizar gráfico de distribuição
+        graficoDistribuicao.data.datasets[0].data = data.distribuicao;
+        graficoDistribuicao.update();
+
+        // Atualizar tabela
+        atualizarTabela(data.dados_alunos);
+    }
+
+    function atualizarTabela(dados) {
+        const tbody = document.querySelector('#tabelaDados tbody');
+        tbody.innerHTML = '';
+
+        dados.forEach(aluno => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${aluno.nome}</td>
+                <td>
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" style="width: ${aluno.progresso}%">
+                            ${aluno.progresso}%
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div class="progress">
+                        <div class="progress-bar bg-warning" role="progressbar" style="width: ${aluno.dificuldades}%">
+                            ${aluno.dificuldades}%
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div class="progress">
+                        <div class="progress-bar bg-info" role="progressbar" style="width: ${aluno.engajamento}%">
+                            ${aluno.engajamento}%
+                        </div>
+                    </div>
+                </td>
+                <td>${aluno.ultima_atividade}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // Ocultar loading após carregar todos os gráficos
+    document.querySelectorAll('.visualization-container').forEach(container => {
+        toggleLoading(container, false);
+    });
+</script>
+{% endblock %} 

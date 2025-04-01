@@ -1,0 +1,252 @@
+{% extends 'listas_verificacao/visualizacoes/base.html' %}
+
+{% block title %}Tendências de Progresso - {{ turma.nome }} - Infantinho 2.0{% endblock %}
+
+{% block visualization_content %}
+<div class="row">
+    <!-- Tendência de Progresso Geral -->
+    <div class="col-md-6 mb-4">
+        <div class="visualization-container">
+            <div class="visualization-header">
+                <h2 class="visualization-title">Progresso Geral por Lista</h2>
+                <div class="visualization-actions">
+                    <button class="btn btn-outline-primary btn-sm" onclick="toggleDataPoints('progressoChart')">
+                        <i class="fas fa-dot-circle"></i> Alternar Pontos
+                    </button>
+                </div>
+            </div>
+            
+            <div class="visualization-content">
+                <div class="visualization-loading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Carregando...</span>
+                    </div>
+                </div>
+                <canvas id="progressoChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tendência de Dificuldades -->
+    <div class="col-md-6 mb-4">
+        <div class="visualization-container">
+            <div class="visualization-header">
+                <h2 class="visualization-title">Dificuldades por Lista</h2>
+                <div class="visualization-actions">
+                    <button class="btn btn-outline-primary btn-sm" onclick="toggleDataPoints('dificuldadesChart')">
+                        <i class="fas fa-dot-circle"></i> Alternar Pontos
+                    </button>
+                </div>
+            </div>
+            
+            <div class="visualization-content">
+                <div class="visualization-loading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Carregando...</span>
+                    </div>
+                </div>
+                <canvas id="dificuldadesChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tendência de Velocidade -->
+    <div class="col-md-6 mb-4">
+        <div class="visualization-container">
+            <div class="visualization-header">
+                <h2 class="visualization-title">Velocidade de Progresso</h2>
+                <div class="visualization-actions">
+                    <button class="btn btn-outline-primary btn-sm" onclick="toggleDataPoints('velocidadeChart')">
+                        <i class="fas fa-dot-circle"></i> Alternar Pontos
+                    </button>
+                </div>
+            </div>
+            
+            <div class="visualization-content">
+                <div class="visualization-loading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Carregando...</span>
+                    </div>
+                </div>
+                <canvas id="velocidadeChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tendência de Engajamento -->
+    <div class="col-md-6 mb-4">
+        <div class="visualization-container">
+            <div class="visualization-header">
+                <h2 class="visualization-title">Engajamento por Lista</h2>
+                <div class="visualization-actions">
+                    <button class="btn btn-outline-primary btn-sm" onclick="toggleDataPoints('engajamentoChart')">
+                        <i class="fas fa-dot-circle"></i> Alternar Pontos
+                    </button>
+                </div>
+            </div>
+            
+            <div class="visualization-content">
+                <div class="visualization-loading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Carregando...</span>
+                    </div>
+                </div>
+                <canvas id="engajamentoChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Configuração comum para todos os gráficos
+    const commonConfig = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top'
+            },
+            tooltip: {
+                mode: 'index',
+                intersect: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    display: true,
+                    color: 'rgba(0, 0, 0, 0.1)'
+                }
+            },
+            x: {
+                grid: {
+                    display: true,
+                    color: 'rgba(0, 0, 0, 0.1)'
+                }
+            }
+        }
+    };
+    
+    // Gráfico de Progresso Geral
+    const progressoChart = createResponsiveChart(
+        document.getElementById('progressoChart'),
+        {
+            type: 'line',
+            data: {
+                labels: {{ datas|safe }},
+                datasets: {{ progresso_datasets|safe }}
+            },
+            options: {
+                ...commonConfig,
+                scales: {
+                    ...commonConfig.scales,
+                    y: {
+                        ...commonConfig.scales.y,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    );
+    
+    // Gráfico de Dificuldades
+    const dificuldadesChart = createResponsiveChart(
+        document.getElementById('dificuldadesChart'),
+        {
+            type: 'line',
+            data: {
+                labels: {{ datas|safe }},
+                datasets: {{ dificuldades_datasets|safe }}
+            },
+            options: {
+                ...commonConfig,
+                scales: {
+                    ...commonConfig.scales,
+                    y: {
+                        ...commonConfig.scales.y,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    );
+    
+    // Gráfico de Velocidade
+    const velocidadeChart = createResponsiveChart(
+        document.getElementById('velocidadeChart'),
+        {
+            type: 'line',
+            data: {
+                labels: {{ datas|safe }},
+                datasets: {{ velocidade_datasets|safe }}
+            },
+            options: {
+                ...commonConfig,
+                scales: {
+                    ...commonConfig.scales,
+                    y: {
+                        ...commonConfig.scales.y,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%/dia';
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    );
+    
+    // Gráfico de Engajamento
+    const engajamentoChart = createResponsiveChart(
+        document.getElementById('engajamentoChart'),
+        {
+            type: 'line',
+            data: {
+                labels: {{ datas|safe }},
+                datasets: {{ engajamento_datasets|safe }}
+            },
+            options: {
+                ...commonConfig,
+                scales: {
+                    ...commonConfig.scales,
+                    y: {
+                        ...commonConfig.scales.y,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    );
+    
+    // Função para alternar pontos em todos os gráficos
+    function toggleDataPoints(chartId) {
+        const chart = window[chartId];
+        const showPoints = chart.options.elements.point.radius > 0;
+        chart.options.elements.point.radius = showPoints ? 0 : 4;
+        chart.options.elements.point.hoverRadius = showPoints ? 0 : 6;
+        chart.update();
+    }
+    
+    // Ocultar loading após carregar todos os gráficos
+    document.querySelectorAll('.visualization-container').forEach(container => {
+        toggleLoading(container, false);
+    });
+</script>
+{% endblock %} 

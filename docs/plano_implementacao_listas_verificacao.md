@@ -9,36 +9,36 @@
 
 ### 1.2 Notificações para Professores
 - [x] Implementar alertas de baixo progresso
-- [ ] Criar notificações de prazos próximos
+- [x] Criar notificações de prazos próximos
 - [x] Adicionar notificações de novas dúvidas
-- [ ] Implementar notificações de conquistas dos alunos
+- [x] Implementar notificações de conquistas dos alunos
 
 ### 1.3 Notificações para Alunos
-- [ ] Criar notificações de feedback
-- [ ] Implementar lembretes de prazos
-- [ ] Adicionar notificações de conquistas
-- [ ] Criar notificações de respostas às dúvidas
+- [x] Criar notificações de feedback
+- [x] Implementar lembretes de prazos
+- [x] Adicionar notificações de conquistas
+- [x] Criar notificações de respostas às dúvidas
 
 ## 2. Relatórios e Análise
 ### 2.1 Relatórios Básicos
-- [ ] Implementar relatório de progresso por turma
-- [ ] Criar relatório de progresso por aluno
-- [ ] Adicionar relatório de tempo médio de conclusão
-- [ ] Implementar relatório de objetivos mais difíceis
-- [ ] Criar relatório de aprendizagens com dificuldade por aluno
-- [ ] Implementar relatório de aprendizagens pendentes de confirmação
+- [x] Relatório de progresso por turma
+- [x] Relatório de progresso por aluno
+- [x] Relatório de tempo médio de conclusão
+- [x] Relatório de objetivos mais difíceis
+- [x] Relatório de aprendizagens com dificuldade por aluno
+- [x] Relatório de aprendizagens pendentes de confirmação
 
 ### 2.2 Relatórios Avançados
-- [ ] Criar relatório de tendências de progresso
-- [ ] Implementar análise preditiva de desempenho
-- [ ] Adicionar relatório de engajamento
-- [ ] Criar relatório de comparação entre turmas
+- [x] Relatório de tendências de progresso
+- [x] Relatório de análise preditiva de desempenho
+- [x] Adicionar relatório de engajamento
+- [ ] Criar relatório de cooperação e partilha de experiências entre turmas
 
 ### 2.3 Visualizações
-- [ ] Implementar gráficos de progresso
-- [ ] Criar heatmaps de atividade
-- [ ] Adicionar gráficos de tendência
-- [ ] Implementar dashboards interativos
+- [x] Implementar gráficos de progresso
+- [x] Criar heatmaps de atividade
+- [x] Adicionar gráficos de tendência
+- [x] Implementar dashboards interativos
 
 ## 3. Sistema de Feedback e Interação
 ### 3.1 Feedback para Objetivos
