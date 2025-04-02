@@ -1,0 +1,93 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+
+{% block title %}Metas de Aprendizagem{% endblock %}
+
+{% block listas_content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Metas de Aprendizagem</h1>
+        <a href="{% url 'listas_verificacao:criar_meta' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nova Meta
+        </a>
+    </div>
+
+    {% if metas %}
+        <div class="row">
+            {% for meta in metas %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ meta.titulo }}</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                {{ meta.get_tipo_display }}
+                                {% if meta.tipo != 'individual' %}
+                                - {{ meta.participantes.count }} participante{{ meta.participantes.count|pluralize }}
+                                {% endif %}
+                            </h6>
+                            <p class="card-text">{{ meta.descricao|truncatewords:30 }}</p>
+                            
+                            <!-- Progresso -->
+                            <div class="progress mb-3" style="height: 8px;">
+                                <div class="progress-bar bg-success" role="progressbar" 
+                                     style="width: {{ meta.progresso }}%;" 
+                                     aria-valuenow="{{ meta.progresso }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                </div>
+                            </div>
+                            
+                            <!-- Datas e Estado -->
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    {% if meta.data_inicio %}
+                                        {{ meta.data_inicio|date:"d/m/Y" }}
+                                        {% if meta.data_fim %}
+                                            até {{ meta.data_fim|date:"d/m/Y" }}
+                                        {% endif %}
+                                    {% endif %}
+                                </small>
+                                <span class="badge {% if meta.estado == 'concluida' %}bg-success{% elif meta.estado == 'em_andamento' %}bg-primary{% elif meta.estado == 'ajustada' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                    {{ meta.get_estado_display }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <div class="btn-group">
+                                <a href="{% url 'listas_verificacao:detalhe_meta' meta.id %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-eye"></i> Ver Detalhes
+                                </a>
+                                {% if request.user == meta.aluno %}
+                                <a href="{% url 'listas_verificacao:solicitar_alteracao_meta' meta.id %}" class="btn btn-outline-warning btn-sm">
+                                    <i class="fas fa-edit"></i> Solicitar Alteração
+                                </a>
+                                {% endif %}
+                                <a href="{% url 'listas_verificacao:adicionar_reflexao' meta.id %}" class="btn btn-outline-info btn-sm">
+                                    <i class="fas fa-comment"></i> Reflexão
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> Nenhuma meta encontrada.
+            {% if request.user.is_student %}
+                <p class="mb-0 mt-2">Comece criando sua primeira meta de aprendizagem!</p>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+    $(document).ready(function() {
+        $('.select2').select2({
+            theme: 'bootstrap-5'
+        });
+    });
+</script>
+{% endblock %} 

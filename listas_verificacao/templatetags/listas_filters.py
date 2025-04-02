@@ -1,4 +1,5 @@
 from django import template
+from ..models import ProgressoAluno, ListaVerificacao
 
 register = template.Library()
 
@@ -27,4 +28,29 @@ def mul(value, arg):
     try:
         return float(value) * float(arg)
     except (ValueError, ZeroDivisionError):
-        return 0 
+        return 0
+
+@register.filter
+def progresso_geral(aluno):
+    """Calculate the overall progress for a student"""
+    # Get all lists the student is enrolled in
+    listas = ListaVerificacao.objects.filter(turma__alunos=aluno)
+    
+    if not listas.exists():
+        return 0
+    
+    total_aprendizagens = 0
+    total_concluidas = 0
+    
+    for lista in listas:
+        total_aprendizagens += lista.aprendizagens.count()
+        total_concluidas += ProgressoAluno.objects.filter(
+            aluno=aluno,
+            lista_verificacao=lista,
+            estado='concluido'
+        ).count()
+    
+    if total_aprendizagens == 0:
+        return 0
+        
+    return round((total_concluidas / total_aprendizagens) * 100, 1) 

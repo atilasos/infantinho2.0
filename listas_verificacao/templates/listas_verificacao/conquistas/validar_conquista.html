@@ -1,0 +1,64 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Validar Conquista - {{ conquista.titulo }}{% endblock %}
+
+{% block listas_content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'listas_verificacao:lista_conquistas' %}">Conquistas</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'listas_verificacao:detalhe_conquista' conquista.id %}">{{ conquista.titulo }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Validar</li>
+        </ol>
+    </nav>
+
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title h5 mb-0">Validar Conquista</h2>
+        </div>
+        <div class="card-body">
+            <div class="mb-4">
+                <h3 class="h6">Detalhes da Conquista</h3>
+                <dl class="row">
+                    <dt class="col-sm-3">Título</dt>
+                    <dd class="col-sm-9">{{ conquista.titulo }}</dd>
+
+                    <dt class="col-sm-3">Tipo</dt>
+                    <dd class="col-sm-9">{{ conquista.get_tipo_display }}</dd>
+
+                    <dt class="col-sm-3">Criador</dt>
+                    <dd class="col-sm-9">{{ conquista.criador.get_full_name }}</dd>
+
+                    <dt class="col-sm-3">Turma</dt>
+                    <dd class="col-sm-9">{{ conquista.turma.nome }}</dd>
+
+                    <dt class="col-sm-3">Descrição</dt>
+                    <dd class="col-sm-9">{{ conquista.descricao }}</dd>
+
+                    <dt class="col-sm-3">Impacto</dt>
+                    <dd class="col-sm-9">{{ conquista.get_impacto_display }}</dd>
+                </dl>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="feedback" class="form-label">Feedback</label>
+                    <textarea name="feedback" id="feedback" class="form-control" rows="5" required></textarea>
+                    <div class="form-text">Forneça um feedback construtivo sobre esta conquista.</div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{% url 'listas_verificacao:detalhe_conquista' conquista.id %}" class="btn btn-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check"></i> Validar Conquista
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

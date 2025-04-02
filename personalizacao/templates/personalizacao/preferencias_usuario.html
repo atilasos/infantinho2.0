@@ -1,0 +1,154 @@
+{% extends "personalizacao/base_personalizacao.html" %}
+
+{% block personalizacao_content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Preferências do Usuário</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" class="needs-validation" novalidate>
+            {% csrf_token %}
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h6 class="mb-3">Aparência</h6>
+                    <div class="mb-3">
+                        <label for="{{ form.tema.id_for_label }}" class="form-label">Tema</label>
+                        {{ form.tema }}
+                        {% if form.tema.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.tema.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.layout.id_for_label }}" class="form-label">Layout</label>
+                        {{ form.layout }}
+                        {% if form.layout.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.layout.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.tamanho_fonte.id_for_label }}" class="form-label">Tamanho da Fonte</label>
+                        {{ form.tamanho_fonte }}
+                        {% if form.tamanho_fonte.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.tamanho_fonte.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="mb-3">Acessibilidade</h6>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            {{ form.alto_contraste }}
+                            <label class="form-check-label" for="{{ form.alto_contraste.id_for_label }}">
+                                Alto Contraste
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            {{ form.reducao_movimento }}
+                            <label class="form-check-label" for="{{ form.reducao_movimento.id_for_label }}">
+                                Redução de Movimento
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h6 class="mb-3">Notificações</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-check form-switch">
+                                {{ form.notificacoes_email }}
+                                <label class="form-check-label" for="{{ form.notificacoes_email.id_for_label }}">
+                                    Notificações por E-mail
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check form-switch">
+                                {{ form.notificacoes_push }}
+                                <label class="form-check-label" for="{{ form.notificacoes_push.id_for_label }}">
+                                    Notificações Push
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check form-switch">
+                                {{ form.notificacoes_som }}
+                                <label class="form-check-label" for="{{ form.notificacoes_som.id_for_label }}">
+                                    Notificações Sonoras
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h6 class="mb-3">Idioma</h6>
+                    <div class="mb-3">
+                        <label for="{{ form.idioma.id_for_label }}" class="form-label">Idioma do Sistema</label>
+                        {{ form.idioma }}
+                        {% if form.idioma.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.idioma.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>Salvar Preferências
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Atualizar tamanho da fonte em tempo real
+    const tamanhoFonteInput = document.querySelector('#{{ form.tamanho_fonte.id_for_label }}');
+    tamanhoFonteInput.addEventListener('input', function() {
+        document.documentElement.style.fontSize = this.value + 'px';
+    });
+    
+    // Atualizar tema em tempo real
+    const temaSelect = document.querySelector('#{{ form.tema.id_for_label }}');
+    temaSelect.addEventListener('change', function() {
+        const tema = this.options[this.selectedIndex].dataset;
+        if (tema.corPrimaria) {
+            document.documentElement.style.setProperty('--bs-primary', tema.corPrimaria);
+            document.documentElement.style.setProperty('--bs-secondary', tema.corSecundaria);
+            document.documentElement.style.setProperty('--bs-body-bg', tema.corFundo);
+            document.documentElement.style.setProperty('--bs-body-color', tema.corTexto);
+        }
+    });
+    
+    // Atualizar layout em tempo real
+    const layoutSelect = document.querySelector('#{{ form.layout.id_for_label }}');
+    layoutSelect.addEventListener('change', function() {
+        const layout = this.options[this.selectedIndex].dataset;
+        if (layout.larguraMaxima) {
+            document.querySelector('.container').style.maxWidth = layout.larguraMaxima + 'px';
+            document.querySelector('.container').style.padding = layout.espacamento + 'px';
+        }
+    });
+});
+</script>
+{% endblock %} 

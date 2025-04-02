@@ -1,0 +1,78 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+
+{% block title %}Criar Novo Diário{% endblock %}
+
+{% block listas_content %}
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'listas_verificacao:lista_diarios' %}">Diários</a></li>
+            <li class="breadcrumb-item active">Criar Novo Diário</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Criar Novo Diário de Aprendizagem</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Título -->
+                        <div class="mb-3">
+                            <label for="titulo" class="form-label">Título do Diário</label>
+                            <input type="text" class="form-control" id="titulo" name="titulo" required>
+                            <div class="form-text">Escolha um título que represente bem o conteúdo do seu diário.</div>
+                        </div>
+
+                        <!-- Descrição -->
+                        <div class="mb-3">
+                            <label for="descricao" class="form-label">Descrição</label>
+                            <textarea class="form-control" id="descricao" name="descricao" rows="4" required></textarea>
+                            <div class="form-text">Descreva o propósito e o tipo de reflexões que você planeja registrar neste diário.</div>
+                        </div>
+
+                        <!-- Turma -->
+                        <div class="mb-3">
+                            <label for="turma" class="form-label">Turma</label>
+                            <select class="form-select" id="turma" name="turma" required>
+                                <option value="">Selecione uma turma</option>
+                                {% for turma in turmas %}
+                                <option value="{{ turma.id }}">{{ turma.nome }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Selecione a turma à qual este diário estará vinculado.</div>
+                        </div>
+
+                        <!-- Compartilhamento -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="compartilhado" name="compartilhado">
+                                <label class="form-check-label" for="compartilhado">
+                                    Compartilhar com a turma
+                                </label>
+                                <div class="form-text">Se marcado, seu diário será visível para os colegas e professor da turma.</div>
+                            </div>
+                        </div>
+
+                        <!-- Botões -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'listas_verificacao:lista_diarios' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Criar Diário
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

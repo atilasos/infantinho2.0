@@ -125,4 +125,31 @@ def enviar_email_nova_duvida(notificacao):
     )
     
     msg.attach_alternative(html_content, "text/html")
-    msg.send() 
+    msg.send()
+
+def enviar_email_prazo_proximo(notificacao):
+    """
+    Envia um email de notificação de prazo próximo.
+    
+    Args:
+        notificacao: Instância do modelo Notificacao do tipo 'prazo_proximo'
+    """
+    enviar_email_notificacao(notificacao)
+
+def enviar_email_conquista(notificacao):
+    """
+    Envia um email de notificação de conquista.
+    
+    Args:
+        notificacao: Instância do modelo Notificacao do tipo 'conquista'
+    """
+    enviar_email_notificacao(notificacao)
+
+def enviar_email_resposta_duvida(notificacao):
+    """
+    Envia um email de notificação de resposta à dúvida.
+    
+    Args:
+        notificacao: Instância do modelo Notificacao do tipo 'resposta_duvida'
+    """
+    enviar_email_notificacao(notificacao) 

@@ -1,0 +1,112 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+
+{% block listas_content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>{{ checklist.titulo }}</h2>
+                <div class="btn-group">
+                    <a href="{% url 'listas_verificacao:editar_checklist' checklist.id %}" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+                    <a href="{% url 'listas_verificacao:excluir_checklist' checklist.id %}" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Excluir
+                    </a>
+                    <a href="{% url 'listas_verificacao:lista_checklists' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </a>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Descrição</h5>
+                    <p class="card-text">{{ checklist.descricao }}</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Itens</h5>
+                    <a href="{% url 'listas_verificacao:criar_item' checklist.id %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i> Adicionar Item
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if checklist.item_set.exists %}
+                        <div class="list-group">
+                            {% for item in checklist.item_set.all %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">{{ item.titulo }}</h6>
+                                            <p class="mb-1">{{ item.descricao }}</p>
+                                            {% if item.categoria %}
+                                                <small class="text-muted">
+                                                    <i class="fas fa-tag"></i> {{ item.categoria.nome }}
+                                                </small>
+                                            {% endif %}
+                                        </div>
+                                        <div class="btn-group">
+                                            <a href="{% url 'listas_verificacao:editar_item' item.id %}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'listas_verificacao:excluir_item' item.id %}" 
+                                               class="btn btn-sm btn-outline-danger">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">Nenhum item adicionado ainda.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Informações</h5>
+                    <ul class="list-unstyled">
+                        <li>
+                            <strong>Criado em:</strong> {{ checklist.data_criacao|date:"d/m/Y H:i" }}
+                        </li>
+                        <li>
+                            <strong>Última atualização:</strong> {{ checklist.data_atualizacao|date:"d/m/Y H:i" }}
+                        </li>
+                        <li>
+                            <strong>Total de itens:</strong> {{ checklist.item_set.count }}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            {% if checklist.item_set.exists %}
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Categorias</h5>
+                        <div class="list-group">
+                            {% regroup checklist.item_set.all by categoria as categoria_list %}
+                            {% for categoria in categoria_list %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    {{ categoria.grouper.nome|default:"Sem categoria" }}
+                                    <span class="badge bg-primary rounded-pill">
+                                        {{ categoria.list|length }}
+                                    </span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

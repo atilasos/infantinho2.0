@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load listas_filters %}
+
+{% block title %}Relatório de Cooperação - {{ turma.nome }} - Infantinho 2.0{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Cabeçalho -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1>Relatório de Cooperação e Partilha</h1>
+            <h2 class="h4 text-muted">{{ turma.nome }}</h2>
+            <p class="text-muted">Gerado em {{ relatorio.data_geracao|date:"d/m/Y H:i" }}</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'listas_verificacao:dashboard_turma' turma.id %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+
+    <!-- Métricas Gerais -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Grupos de Estudo</h5>
+                    <p class="card-text display-4 text-primary">{{ relatorio.total_grupos_estudo }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Experiências Compartilhadas</h5>
+                    <p class="card-text display-4 text-success">{{ relatorio.total_experiencias_compartilhadas }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Projetos Colaborativos</h5>
+                    <p class="card-text display-4 text-info">{{ relatorio.total_projetos_colaborativos }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Alunos Cooperativos</h5>
+                    <p class="card-text display-4 text-warning">{{ relatorio.percentual_cooperacao }}%</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grupos de Estudo -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title mb-0">Grupos de Estudo</h3>
+        </div>
+        <div class="card-body">
+            {% if relatorio.grupos_estudo %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Lista</th>
+                                <th>Alunos</th>
+                                <th>Faixa de Progresso</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for grupo in relatorio.grupos_estudo %}
+                            <tr>
+                                <td>{{ grupo.lista.titulo }}</td>
+                                <td>
+                                    {% for aluno in grupo.alunos %}
+                                        <span class="badge badge-primary">{{ aluno.get_full_name }}</span>
+                                    {% endfor %}
+                                </td>
+                                <td>{{ grupo.faixa_progresso }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted mb-0">Nenhum grupo de estudo identificado.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Experiências Compartilhadas -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title mb-0">Experiências Compartilhadas</h3>
+        </div>
+        <div class="card-body">
+            {% if relatorio.experiencias_compartilhadas %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Lista</th>
+                                <th>Aprendizagem</th>
+                                <th>Aluno com Dificuldade</th>
+                                <th>Alunos que Superaram</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for exp in relatorio.experiencias_compartilhadas %}
+                            <tr>
+                                <td>{{ exp.lista.titulo }}</td>
+                                <td>{{ exp.aprendizagem.descricao }}</td>
+                                <td>{{ exp.aluno_dificuldade.get_full_name }}</td>
+                                <td>
+                                    {% for aluno in exp.alunos_superacao %}
+                                        <span class="badge badge-success">{{ aluno.get_full_name }}</span>
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted mb-0">Nenhuma experiência compartilhada registrada.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Projetos Colaborativos -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title mb-0">Projetos Colaborativos</h3>
+        </div>
+        <div class="card-body">
+            {% if relatorio.projetos_colaborativos %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Lista</th>
+                                <th>Aprendizagem</th>
+                                <th>Alunos Envolvidos</th>
+                                <th>Progresso Conjunto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for projeto in relatorio.projetos_colaborativos %}
+                            <tr>
+                                <td>{{ projeto.lista.titulo }}</td>
+                                <td>{{ projeto.aprendizagem.descricao }}</td>
+                                <td>
+                                    {% for aluno in projeto.alunos %}
+                                        <span class="badge badge-info">{{ aluno.get_full_name }}</span>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    <div class="progress">
+                                        <div class="progress-bar" role="progressbar" 
+                                             style="width: {{ projeto.progresso_conjunto }}%"
+                                             aria-valuenow="{{ projeto.progresso_conjunto }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                            {{ projeto.progresso_conjunto|floatformat:1 }}%
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted mb-0">Nenhum projeto colaborativo identificado.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Adicionar tooltips
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,140 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+
+{% block title %}Conquistas{% endblock %}
+
+{% block listas_content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Conquistas</h1>
+        <a href="{% url 'listas_verificacao:criar_conquista' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nova Conquista
+        </a>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2 class="card-title h5 mb-0">Filtros</h2>
+        </div>
+        <div class="card-body">
+            <div class="d-flex gap-2 flex-wrap">
+                {% for tipo_valor, tipo_nome in tipos_conquista %}
+                <a href="{% url 'listas_verificacao:lista_conquistas' %}?tipo={{ tipo_valor }}" 
+                   class="btn {% if tipo_selecionado == tipo_valor %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    {{ tipo_nome }}
+                </a>
+                {% endfor %}
+                {% if tipo_selecionado %}
+                <a href="{% url 'listas_verificacao:lista_conquistas' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Limpar Filtros
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% if conquistas %}
+        <div class="row">
+            {% for conquista in conquistas %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 achievement-card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ conquista.titulo }}</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                {{ conquista.get_tipo_display }}
+                                <span class="badge bg-info ms-2">{{ conquista.get_impacto_display }}</span>
+                            </h6>
+                            <p class="card-text">{{ conquista.descricao|truncatewords:30 }}</p>
+                            
+                            <!-- Participantes e Validações -->
+                            <div class="mb-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-users"></i> {{ conquista.participantes.count }} participante{{ conquista.participantes.count|pluralize }}
+                                    <br>
+                                    <i class="fas fa-check-circle"></i> {{ conquista.validadores.count }} validação{{ conquista.validadores.count|pluralize }}
+                                </small>
+                            </div>
+                            
+                            <!-- Data e Turma -->
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    {{ conquista.data_criacao|date:"d/m/Y" }}
+                                </small>
+                                <small class="text-muted">
+                                    {{ conquista.turma.nome }}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <div class="btn-group w-100">
+                                <a href="{% url 'listas_verificacao:detalhe_conquista' conquista.id %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-eye"></i> Ver Detalhes
+                                </a>
+                                {% if request.user != conquista.criador and request.user not in conquista.validadores.all %}
+                                <a href="{% url 'listas_verificacao:validar_conquista' conquista.id %}" class="btn btn-outline-success btn-sm">
+                                    <i class="fas fa-check"></i> Validar
+                                </a>
+                                {% endif %}
+                                {% if request.user == conquista.criador %}
+                                <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#reflexaoModal{{ conquista.id }}">
+                                    <i class="fas fa-comment"></i> Reflexão
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal de Reflexão -->
+                {% if request.user == conquista.criador %}
+                <div class="modal fade" id="reflexaoModal{{ conquista.id }}" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Reflexão sobre a Conquista</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <form method="post" action="{% url 'listas_verificacao:adicionar_reflexao_conquista' conquista.id %}">
+                                {% csrf_token %}
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label for="reflexao" class="form-label">Sua reflexão sobre o impacto desta conquista</label>
+                                        <textarea name="reflexao" id="reflexao" class="form-control" rows="4" required></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                                    <button type="submit" class="btn btn-primary">Salvar Reflexão</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            {% if tipo_selecionado %}
+            Nenhuma conquista encontrada com o filtro selecionado.
+            <a href="{% url 'listas_verificacao:lista_conquistas' %}" class="alert-link">Limpar filtros</a>
+            {% else %}
+            Nenhuma conquista registrada ainda.
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Inicializa o select2 para melhor experiência de seleção
+        $('.select2').select2({
+            theme: 'bootstrap-5',
+            width: '100%'
+        });
+    });
+</script>
+{% endblock %} 

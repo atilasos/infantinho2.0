@@ -1,0 +1,27 @@
+{% extends "listas_verificacao/notificacoes/email/base_email.html" %}
+
+{% block email_content %}
+<div class="conquista">
+    <p>Olá {{ notificacao.destinatario.get_full_name|default:notificacao.destinatario.username }},</p>
+    
+    <p>Parabéns! Você alcançou uma nova conquista:</p>
+    
+    <div class="conquista-detalhes">
+        <h3>{{ notificacao.titulo }}</h3>
+        <p>{{ notificacao.mensagem }}</p>
+        
+        {% if notificacao.aprendizagem %}
+        <p><strong>Aprendizagem:</strong> {{ notificacao.aprendizagem.codigo }} - {{ notificacao.aprendizagem.descricao }}</p>
+        {% endif %}
+        
+        {% if notificacao.lista_verificacao %}
+        <p><strong>Lista de Verificação:</strong> {{ notificacao.lista_verificacao.titulo }}</p>
+        {% endif %}
+    </div>
+    
+    <p>Para ver mais detalhes sobre sua conquista, clique no link abaixo:</p>
+    {% if notificacao.aprendizagem %}
+    <p><a href="{{ site_url }}{% url 'listas_verificacao:detalhe_aprendizagem' notificacao.aprendizagem.id %}">Ver Detalhes da Aprendizagem</a></p>
+    {% endif %}
+</div>
+{% endblock %} 

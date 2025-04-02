@@ -1,8 +1,9 @@
 {% extends "blog/base.html" %}
 {% load i18n %}
 {% load account socialaccount %}
+{% load crispy_forms_tags %}
 
-{% block head_title %}{% trans "Entrar - Infantinho 2.0" %}{% endblock %}
+{% block head_title %}{% trans "Login de Demonstração - Infantinho 2.0" %}{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
@@ -10,7 +11,7 @@
         <div class="col-md-6">
             <div class="card shadow-sm">
                 <div class="card-body p-4">
-                    <h1 class="text-center mb-4">{% trans "Bem-vindo ao Infantinho 2.0" %}</h1>
+                    <h1 class="text-center mb-4">{% trans "Login de Demonstração" %}</h1>
                     
                     {% if messages %}
                         {% for message in messages %}
@@ -21,29 +22,45 @@
                         {% endfor %}
                     {% endif %}
                     
-                    {% get_providers as socialaccount_providers %}
-                    
-                    <div class="d-grid gap-2 mb-4">
-                        {% for provider in socialaccount_providers %}
-                            {% if provider.id == "microsoft" %}
-                                <a href="{% provider_login_url provider.id %}" 
-                                   class="btn btn-light btn-lg border d-flex align-items-center justify-content-center gap-2">
-                                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Microsoft_logo.svg/512px-Microsoft_logo.svg.png" 
-                                         alt="Microsoft logo" 
-                                         style="height: 24px;">
-                                    {% trans "Entrar com Microsoft" %}
-                                </a>
-                            {% endif %}
-                        {% endfor %}
-                    </div>
+                    <!-- Formulário de login com usuário e senha (para contas de demonstração) -->
+                    <form method="post" action="{% url 'account_login' %}" class="mb-4">
+                        {% csrf_token %}
+                        <h4 class="text-center mb-3">{% trans "Contas de Demonstração" %}</h4>
+                        <div class="mb-3">
+                            <label for="id_username" class="form-label">{% trans "Nome de usuário" %}</label>
+                            <input type="text" name="username" id="id_username" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_password" class="form-label">{% trans "Senha" %}</label>
+                            <input type="password" name="password" id="id_password" class="form-control" required>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">{% trans "Entrar com Conta de Demonstração" %}</button>
+                        </div>
+                    </form>
 
                     <div class="text-center">
                         <p class="text-muted">
-                            {% trans "Por favor, use sua conta Microsoft escolar para entrar." %}
+                            {% trans "Contas de demonstração disponíveis:" %}
                         </p>
-                        {% if user.is_authenticated %}
-                            <p>{% trans "Nota: Você já está logado como" %} {{ user.email }}</p>
-                        {% endif %}
+                        <div class="mb-3">
+                            <h5>Professores:</h5>
+                            <code>prof.portugues / Demo@123</code><br>
+                            <code>prof.matematica / Demo@123</code>
+                        </div>
+                        <div class="mb-3">
+                            <h5>Alunos:</h5>
+                            <code>aluno1 / Demo@123</code><br>
+                            <code>aluno2 / Demo@123</code><br>
+                            <code>aluno3 / Demo@123</code><br>
+                            <code>aluno4 / Demo@123</code><br>
+                            <code>aluno5 / Demo@123</code>
+                        </div>
+                        <hr>
+                        <p class="text-muted">
+                            {% trans "Para acessar com sua conta Microsoft, " %}
+                            <a href="{% url 'microsoft:to_auth_redirect' %}" class="text-primary">clique aqui</a>.
+                        </p>
                     </div>
                 </div>
             </div>

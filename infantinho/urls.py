@@ -19,19 +19,36 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView, RedirectView
+from django.contrib.auth import views as auth_views
+from allauth.account import views as allauth_views
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('microsoft/', include('microsoft_auth.urls', namespace='microsoft')),
-    path('pages/', include('django.contrib.flatpages.urls')),
-    path('', include('blog.urls', namespace='blog')),
-    path('ai/', include('ai_core.urls', namespace='ai_core')),
-    path('listas-verificacao/', include('listas_verificacao.urls')),  # Learning checklists URLs
+    # URL padrão que redireciona para a página de blog em vez da página de login
+    path('', RedirectView.as_view(url='/blog/', permanent=False), name='home'),
     
-    # Redirecionamentos para autenticação Microsoft
-    path('accounts/login/', RedirectView.as_view(url='/microsoft/to-auth-redirect/', permanent=False), name='login'),
-    path('accounts/signup/', RedirectView.as_view(url='/microsoft/to-auth-redirect/', permanent=False), name='signup'),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)  # Serve media files in development
+    path('admin/', admin.site.urls),
+    path('accounts/', include('allauth.urls')),  # URLs do django-allauth
+    path('accounts/', include('accounts.urls')),
+    path('pit/', include('pit.urls')),
+    path('tea/', include('tea.urls')),
+    path('gestao-cooperada/', include('gestao_cooperada.urls')),
+    path('khanmigo/', include('khanmigo_clone.urls')),
+    path('blog/', include('blog.urls')),
+    path('ai/', include('ai_core.urls')),
+    path('microsoft/', include('microsoft_auth.urls', namespace='microsoft')),
+    path('listas-verificacao/', include('listas_verificacao.urls', namespace='listas_verificacao')),  # Learning checklists URLs
+    path('exportacao-backup/', include('exportacao_backup.urls')),
+    path('personalizacao/', include('personalizacao.urls')),
+]
 
+# Adiciona as URLs do Debug Toolbar em ambiente de desenvolvimento
 if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns += [
+        path('__debug__/', include(debug_toolbar.urls)),
+    ]
+
+# Adiciona as URLs de arquivos de mídia em ambiente de desenvolvimento
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

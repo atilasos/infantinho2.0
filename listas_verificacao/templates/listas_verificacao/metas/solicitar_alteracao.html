@@ -1,0 +1,127 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+
+{% block title %}Solicitar Alteração - {{ meta.titulo }}{% endblock %}
+
+{% block listas_content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'listas_verificacao:lista_metas' %}">Metas</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'listas_verificacao:detalhe_meta' meta.id %}">{{ meta.titulo }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Solicitar Alteração</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Solicitar Alteração</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <h5 class="alert-heading"><i class="fas fa-info-circle"></i> Sobre Ajustes</h5>
+                        <p class="mb-0">
+                            Os ajustes permitem adaptar a meta às necessidades e circunstâncias atuais. 
+                            Você pode solicitar mudanças no prazo, participantes, recursos ou outros aspectos da meta.
+                            Cada solicitação será avaliada pelo professor responsável.
+                        </p>
+                    </div>
+
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label for="tipo" class="form-label">Tipo de Alteração</label>
+                            <select class="form-select" id="tipo" name="tipo" required>
+                                <option value="">Selecione o tipo de alteração</option>
+                                {% for tipo, nome in tipos_alteracao %}
+                                <option value="{{ tipo }}">{{ nome }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if form.tipo.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.tipo.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Escolha o tipo de alteração que deseja solicitar.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="descricao" class="form-label">Descrição da Alteração</label>
+                            <textarea class="form-control" id="descricao" name="descricao" rows="4" required></textarea>
+                            {% if form.descricao.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.descricao.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Descreva detalhadamente a alteração que pretende fazer.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="justificativa" class="form-label">Justificativa</label>
+                            <textarea class="form-control" id="justificativa" name="justificativa" rows="4" required></textarea>
+                            {% if form.justificativa.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.justificativa.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Explique por que esta alteração é necessária.</div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'listas_verificacao:detalhe_meta' meta.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Solicitar Alteração
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+    $(document).ready(function() {
+        $('.select2').select2({
+            theme: 'bootstrap-5'
+        });
+
+        // Validação do formulário
+        (function () {
+            'use strict'
+            var forms = document.querySelectorAll('.needs-validation')
+            Array.prototype.slice.call(forms)
+                .forEach(function (form) {
+                    form.addEventListener('submit', function (event) {
+                        if (!form.checkValidity()) {
+                            event.preventDefault()
+                            event.stopPropagation()
+                        }
+                        form.classList.add('was-validated')
+                    }, false)
+                })
+        })()
+    });
+</script>
+{% endblock %} 

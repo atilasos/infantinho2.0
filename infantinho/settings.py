@@ -55,17 +55,36 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
     'listas_verificacao',
     'taggit',
+    'exportacao_backup',
+    'personalizacao',
+    'debug_toolbar',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.microsoft',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
+
+# Django Debug Toolbar
+INTERNAL_IPS = [
+    '127.0.0.1',
+]
+
+DEBUG_TOOLBAR_CONFIG = {
+    'SHOW_TOOLBAR_CALLBACK': lambda request: DEBUG,
+}
 
 ROOT_URLCONF = 'infantinho.urls'
 
@@ -73,15 +92,16 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [os.path.join(BASE_DIR, 'templates')],
-        'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'django.template.context_processors.media',
-                'microsoft_auth.context_processors.microsoft',
+            ],
+            'loaders': [
+                'django.template.loaders.filesystem.Loader',
+                'django.template.loaders.app_directories.Loader',
             ],
         },
     },
@@ -96,11 +116,15 @@ WSGI_APPLICATION = 'infantinho.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': config('DB_HOST'),
-        'PORT': config('DB_PORT'),
+        'NAME': config('DB_NAME', default='infantinho'),
+        'USER': config('DB_USER', default='postgres'),
+        'PASSWORD': config('DB_PASSWORD', default='postgres'),
+        'HOST': config('DB_HOST', default='localhost'),
+        'PORT': config('DB_PORT', default='5432'),
+        'CONN_MAX_AGE': 600,  # 10 minutos
+        'OPTIONS': {
+            'connect_timeout': 10,
+        },
     }
 }
 
@@ -114,6 +138,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 8,
+        }
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -151,8 +178,16 @@ STATICFILES_DIRS = [
 ]
 
 # Media files
-MEDIA_URL = 'media/'
+MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Configurações de arquivos de backup e exportação
+BACKUP_ROOT = os.path.join(BASE_DIR, 'backups')
+EXPORT_ROOT = os.path.join(BASE_DIR, 'exports')
+
+# Criar diretórios se não existirem
+os.makedirs(BACKUP_ROOT, exist_ok=True)
+os.makedirs(EXPORT_ROOT, exist_ok=True)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -165,7 +200,7 @@ SITE_ID = 1
 # Login/Logout URLs
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
-LOGIN_URL = '/microsoft/to-auth-redirect/'
+LOGIN_URL = '/accounts/login/'
 
 # Email settings
 if DEBUG:
@@ -187,15 +222,24 @@ SITE_URL = config('SITE_URL', default='http://localhost:8000')
 # Cache settings
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'unique-snowflake',
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': 'redis://127.0.0.1:6379/1',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
     }
 }
 
+# Configurações de Sessão
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Mudando para usar o banco de dados em vez do Redis
+SESSION_CACHE_ALIAS = 'default'
+
 # Authentication Backend settings
 AUTHENTICATION_BACKENDS = [
-    'microsoft_auth.backends.MicrosoftAuthenticationBackend',
-    'django.contrib.auth.backends.ModelBackend'
+    'accounts.views.DemoAuthenticationBackend',  # Custom backend for demo accounts
+    'django.contrib.auth.backends.ModelBackend',  # Default Django backend
+    'allauth.account.auth_backends.AuthenticationBackend',  # Allauth backend
+    'microsoft_auth.backends.MicrosoftAuthenticationBackend',  # Microsoft backend
 ]
 
 # CSRF settings
@@ -230,3 +274,121 @@ AI_AGENT_CONFIG = {
 
 # Configuração do CustomUser
 AUTH_USER_MODEL = 'accounts.CustomUser'
+
+# Configurações de Arquivos Estáticos
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
+
+# Configurações de Compressão
+COMPRESS_ENABLED = True
+COMPRESS_CSS_FILTERS = [
+    'compressor.filters.css_default.CssAbsoluteFilter',
+    'compressor.filters.cssmin.rCSSMinFilter',
+]
+COMPRESS_JS_FILTERS = [
+    'compressor.filters.jsmin.JSMinFilter',
+]
+
+# Configurações de Logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'django.log'),
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
+
+# Criar diretório de logs se não existir
+os.makedirs(os.path.join(BASE_DIR, 'logs'), exist_ok=True)
+
+# Configurações do Sentry
+SENTRY_DSN = os.environ.get('SENTRY_DSN', '')
+ENVIRONMENT = os.environ.get('ENVIRONMENT', 'development')
+VERSION = '1.0.0'
+
+# Inicializa o Sentry se o DSN estiver configurado
+if SENTRY_DSN:
+    from .sentry import init_sentry
+    init_sentry()
+
+# Configurações do Debug Toolbar
+if DEBUG:
+    from .debug_toolbar import configure_debug_toolbar
+    configure_debug_toolbar()
+
+    INTERNAL_IPS = [
+        '127.0.0.1',
+        'localhost',
+    ]
+
+# Configurações do WhiteNoise
+from .whitenoise import configure_whitenoise
+configure_whitenoise()
+
+# Configurações do django-allauth
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
+ACCOUNT_EMAIL_VERIFICATION = 'none'  # Para demonstração, não requer verificação de email
+ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
+ACCOUNT_LOGIN_ON_PASSWORD_RESET = True
+ACCOUNT_SESSION_REMEMBER = True
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username'
+ACCOUNT_USER_MODEL_EMAIL_FIELD = 'email'
+ACCOUNT_EMAIL_SUBJECT_PREFIX = '[Infantinho 2.0] '
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'
+ACCOUNT_LOGIN_ATTEMPTS_LIMIT = 5
+ACCOUNT_LOGIN_ATTEMPTS_TIMEOUT = 300
+ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = True
+ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = True
+ACCOUNT_SIGNUP_FORM_CLASS = None
+ACCOUNT_USERNAME_MIN_LENGTH = 3
+ACCOUNT_USERNAME_MAX_LENGTH = 30
+ACCOUNT_USERNAME_BLACKLIST = ['admin', 'administrator', 'root', 'user', 'test', 'demo']
+ACCOUNT_PASSWORD_MIN_LENGTH = 8
+ACCOUNT_PASSWORD_MAX_LENGTH = 128
+ACCOUNT_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 8,
+        }
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+]

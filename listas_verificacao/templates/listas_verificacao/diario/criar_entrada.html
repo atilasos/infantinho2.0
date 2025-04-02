@@ -1,0 +1,91 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+
+{% block title %}Nova Entrada - {{ diario.titulo }}{% endblock %}
+
+{% block listas_content %}
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'listas_verificacao:lista_diarios' %}">Diários</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'listas_verificacao:detalhe_diario' diario.id %}">{{ diario.titulo }}</a></li>
+            <li class="breadcrumb-item active">Nova Entrada</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Nova Entrada no Diário</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Título -->
+                        <div class="mb-3">
+                            <label for="titulo" class="form-label">Título da Entrada</label>
+                            <input type="text" class="form-control" id="titulo" name="titulo" required>
+                            <div class="form-text">Um título breve que descreva o conteúdo desta entrada.</div>
+                        </div>
+
+                        <!-- Tipo -->
+                        <div class="mb-3">
+                            <label for="tipo" class="form-label">Tipo de Entrada</label>
+                            <select class="form-select" id="tipo" name="tipo" required>
+                                <option value="">Selecione um tipo</option>
+                                {% for tipo, nome in tipos_entrada %}
+                                <option value="{{ tipo }}">{{ nome }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Escolha o tipo que melhor caracteriza esta entrada.</div>
+                        </div>
+
+                        <!-- Conteúdo -->
+                        <div class="mb-3">
+                            <label for="conteudo" class="form-label">Conteúdo</label>
+                            <textarea class="form-control" id="conteudo" name="conteudo" rows="6" required></textarea>
+                            <div class="form-text">Desenvolva suas ideias, reflexões ou descobertas.</div>
+                        </div>
+
+                        <!-- Aprendizagens Relacionadas -->
+                        <div class="mb-3">
+                            <label class="form-label">Aprendizagens Relacionadas</label>
+                            <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                {% for aprendizagem in aprendizagens %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="aprendizagens" value="{{ aprendizagem.id }}" id="aprendizagem_{{ aprendizagem.id }}">
+                                    <label class="form-check-label" for="aprendizagem_{{ aprendizagem.id }}">
+                                        {{ aprendizagem.codigo }} - {{ aprendizagem.descricao|truncatechars:100 }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="form-text">Selecione as aprendizagens relacionadas a esta entrada.</div>
+                        </div>
+
+                        <!-- Anexos -->
+                        <div class="mb-4">
+                            <label for="anexos" class="form-label">Anexos</label>
+                            <input type="file" class="form-control" id="anexos" name="anexos" multiple>
+                            <div class="form-text">Você pode adicionar arquivos relevantes para esta entrada (opcional).</div>
+                        </div>
+
+                        <!-- Botões -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'listas_verificacao:detalhe_diario' diario.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar Entrada
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

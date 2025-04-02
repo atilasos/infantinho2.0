@@ -1,0 +1,96 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+
+{% block title %}Aprovar Ajuste - {{ ajuste.meta.titulo }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'lista_metas' %}">Metas</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'detalhe_meta' ajuste.meta.id %}">{{ ajuste.meta.titulo }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Aprovar Ajuste</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h1 class="h2 mb-0">Aprovar Ajuste</h1>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <h5 class="alert-heading"><i class="fas fa-info-circle"></i> Detalhes do Ajuste</h5>
+                        <dl class="row mb-0">
+                            <dt class="col-sm-3">Solicitante</dt>
+                            <dd class="col-sm-9">{{ ajuste.solicitante.get_full_name }}</dd>
+
+                            <dt class="col-sm-3">Data</dt>
+                            <dd class="col-sm-9">{{ ajuste.data_solicitacao|date:"d/m/Y H:i" }}</dd>
+
+                            <dt class="col-sm-3">Tipo</dt>
+                            <dd class="col-sm-9">{{ ajuste.get_tipo_display }}</dd>
+
+                            <dt class="col-sm-3">Descrição</dt>
+                            <dd class="col-sm-9">{{ ajuste.descricao }}</dd>
+
+                            <dt class="col-sm-3">Justificativa</dt>
+                            <dd class="col-sm-9">{{ ajuste.justificativa }}</dd>
+                        </dl>
+                    </div>
+
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+
+                        <div class="mb-4">
+                            <label for="resposta" class="form-label">Resposta</label>
+                            <textarea name="resposta" id="resposta" class="form-control" rows="4" required></textarea>
+                            <div class="form-text">
+                                Forneça uma resposta detalhada explicando por que você está aprovando este ajuste.
+                                Inclua quaisquer orientações ou recomendações adicionais.
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'detalhe_meta' ajuste.meta.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </a>
+                            <div>
+                                <a href="{% url 'rejeitar_ajuste' ajuste.id %}" class="btn btn-outline-danger me-2">
+                                    <i class="fas fa-times"></i> Rejeitar
+                                </a>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-check"></i> Aprovar Ajuste
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+    $(document).ready(function() {
+        // Validação do formulário
+        (function () {
+            'use strict'
+            var forms = document.querySelectorAll('.needs-validation')
+            Array.prototype.slice.call(forms)
+                .forEach(function (form) {
+                    form.addEventListener('submit', function (event) {
+                        if (!form.checkValidity()) {
+                            event.preventDefault()
+                            event.stopPropagation()
+                        }
+                        form.classList.add('was-validated')
+                    }, false)
+                })
+        })()
+    });
+</script>
+{% endblock %} 

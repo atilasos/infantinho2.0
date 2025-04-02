@@ -1,0 +1,64 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+
+{% block title %}Nova Dúvida - {{ aprendizagem.codigo }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h2>Nova Dúvida</h2>
+            <h4>{{ aprendizagem.codigo }} - {{ aprendizagem.descricao }}</h4>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="form-group mb-3">
+                    <label for="titulo" class="form-label">Título da Dúvida</label>
+                    <input type="text" name="titulo" id="titulo" class="form-control" required>
+                    <small class="form-text text-muted">
+                        Descreva brevemente sua dúvida em uma frase.
+                    </small>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="descricao" class="form-label">Descrição</label>
+                    <textarea name="descricao" id="descricao" class="form-control" rows="5" required></textarea>
+                    <small class="form-text text-muted">
+                        Explique sua dúvida em detalhes. Quanto mais informações você fornecer, mais fácil será para os outros ajudarem.
+                    </small>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="categoria" class="form-label">Categoria</label>
+                            <select name="categoria" id="categoria" class="form-select" required>
+                                {% for categoria in categorias %}
+                                    <option value="{{ categoria.0 }}">{{ categoria.1 }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="prioridade" class="form-label">Prioridade</label>
+                            <select name="prioridade" id="prioridade" class="form-select" required>
+                                {% for prioridade in prioridades %}
+                                    <option value="{{ prioridade.0 }}">{{ prioridade.1 }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">Criar Dúvida</button>
+                    <a href="{% url 'listas_verificacao:lista_duvidas' %}" class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

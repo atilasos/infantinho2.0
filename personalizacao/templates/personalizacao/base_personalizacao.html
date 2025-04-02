@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Personalização{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'personalizacao/css/personalizacao.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
+            <div class="position-sticky pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'preferencias_usuario' %}active{% endif %}" 
+                           href="{% url 'personalizacao:preferencias_usuario' %}">
+                            <i class="fas fa-cog"></i>
+                            Preferências
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'tema' in request.resolver_match.url_name %}active{% endif %}" 
+                           href="{% url 'personalizacao:lista_temas' %}">
+                            <i class="fas fa-palette"></i>
+                            Temas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'layout' in request.resolver_match.url_name %}active{% endif %}" 
+                           href="{% url 'personalizacao:lista_layouts' %}">
+                            <i class="fas fa-th-large"></i>
+                            Layouts
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'widget' in request.resolver_match.url_name %}active{% endif %}" 
+                           href="{% url 'personalizacao:lista_widgets' %}">
+                            <i class="fas fa-puzzle-piece"></i>
+                            Widgets
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% block personalizacao_content %}
+            {% endblock %}
+        </main>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'personalizacao/js/personalizacao.js' %}"></script>
+{% endblock %} 

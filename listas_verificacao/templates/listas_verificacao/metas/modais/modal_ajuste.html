@@ -1,0 +1,40 @@
+<!-- Modal de Ajuste -->
+<div class="modal fade" id="modalAjuste" tabindex="-1" aria-labelledby="modalAjusteLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalAjusteLabel">Solicitar Ajuste na Meta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'listas_verificacao:solicitar_ajuste_meta' meta.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="tipo_ajuste" class="form-label">Tipo de Ajuste</label>
+                        <select class="form-select" id="tipo_ajuste" name="tipo" required>
+                            <option value="">Selecione o tipo de ajuste</option>
+                            <option value="prazo">Ajuste de Prazo</option>
+                            <option value="recursos">Ajuste de Recursos</option>
+                            <option value="escopo">Ajuste de Escopo</option>
+                            <option value="outro">Outro</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="descricao_ajuste" class="form-label">Descrição do Ajuste</label>
+                        <textarea class="form-control" id="descricao_ajuste" name="descricao" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="justificativa_ajuste" class="form-label">Justificativa</label>
+                        <textarea class="form-control" id="justificativa_ajuste" name="justificativa" rows="2" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Solicitar Ajuste</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div> 

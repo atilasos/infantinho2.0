@@ -31,6 +31,10 @@ def to_auth_redirect(request):
 @csrf_exempt
 def from_auth_redirect(request):
     """Handle the redirect from Microsoft authentication."""
+    # Check if user is already authenticated to prevent redirect loops
+    if request.user.is_authenticated:
+        return redirect('/')
+        
     if request.method == 'POST':
         code = request.POST.get('code')
         if code:
@@ -92,11 +96,13 @@ def from_auth_redirect(request):
                     user.backend = 'microsoft_auth.backends.MicrosoftAuthenticationBackend'
                     login(request, user)
                     
+                    messages.success(request, 'Login com Microsoft realizado com sucesso!')
                     return redirect('/')
     
+    messages.error(request, 'Falha na autenticação com Microsoft.')
     return redirect('/')
 
 def logout(request):
     """Logout the user."""
     auth_logout(request)
-    return redirect('/') 
+    return redirect('/accounts/login/') 

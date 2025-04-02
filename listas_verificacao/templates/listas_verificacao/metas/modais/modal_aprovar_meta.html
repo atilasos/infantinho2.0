@@ -1,0 +1,46 @@
+<!-- Modal de Aprovação de Meta -->
+<div class="modal fade" id="modalAprovarMeta" tabindex="-1" aria-labelledby="modalAprovarMetaLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalAprovarMetaLabel">Aprovar Meta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'listas_verificacao:aprovar_meta' meta.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p>Você está prestes a aprovar a meta "{{ meta.titulo }}".</p>
+                    
+                    <div class="mb-3">
+                        <label for="data_inicio" class="form-label">Data de Início</label>
+                        <input type="date" class="form-control" id="data_inicio" name="data_inicio" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="data_fim" class="form-label">Data de Término</label>
+                        <input type="date" class="form-control" id="data_fim" name="data_fim" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="observacoes_aprovacao" class="form-label">Observações</label>
+                        <textarea class="form-control" id="observacoes_aprovacao" name="observacoes" rows="2"></textarea>
+                        <small class="form-text text-muted">
+                            Adicione observações ou sugestões para o desenvolvimento da meta.
+                        </small>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        Ao aprovar esta meta, ela será marcada como "Em Andamento" e o aluno poderá começar a trabalhar nela.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check"></i> Aprovar Meta
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div> 

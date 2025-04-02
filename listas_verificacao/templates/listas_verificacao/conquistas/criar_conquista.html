@@ -1,0 +1,235 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+
+{% block title %}Nova Conquista Coletiva{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="h4 mb-0">Nova Conquista Coletiva</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Informações Básicas -->
+                        <div class="mb-4">
+                            <h3 class="h5 mb-3">Informações Básicas</h3>
+                            <div class="row g-3">
+                                <div class="col-md-12">
+                                    <label for="{{ form.titulo.id_for_label }}" class="form-label">Título da Conquista</label>
+                                    {{ form.titulo }}
+                                    {% if form.titulo.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.titulo.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="{{ form.tipo.id_for_label }}" class="form-label">Tipo de Conquista</label>
+                                    {{ form.tipo }}
+                                    {% if form.tipo.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.tipo.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="{{ form.turma.id_for_label }}" class="form-label">Turma</label>
+                                    {{ form.turma }}
+                                    {% if form.turma.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.turma.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-12">
+                                    <label for="{{ form.descricao.id_for_label }}" class="form-label">Descrição</label>
+                                    {{ form.descricao }}
+                                    {% if form.descricao.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.descricao.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Participantes e Aprendizagens -->
+                        <div class="mb-4">
+                            <h3 class="h5 mb-3">Participantes e Aprendizagens</h3>
+                            <div class="row g-3">
+                                <div class="col-md-12">
+                                    <label for="{{ form.participantes.id_for_label }}" class="form-label">Participantes</label>
+                                    {{ form.participantes }}
+                                    {% if form.participantes.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.participantes.errors }}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        Selecione todos os participantes envolvidos nesta conquista.
+                                    </small>
+                                </div>
+                                <div class="col-md-12">
+                                    <label for="{{ form.aprendizagens.id_for_label }}" class="form-label">Aprendizagens Relacionadas</label>
+                                    {{ form.aprendizagens }}
+                                    {% if form.aprendizagens.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.aprendizagens.errors }}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        Selecione as aprendizagens essenciais relacionadas a esta conquista.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dimensão Cooperativa -->
+                        <div class="mb-4">
+                            <h3 class="h5 mb-3">Dimensão Cooperativa</h3>
+                            <div class="row g-3">
+                                <div class="col-md-12">
+                                    <label for="{{ form.contribuicoes.id_for_label }}" class="form-label">Contribuições</label>
+                                    {{ form.contribuicoes }}
+                                    {% if form.contribuicoes.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.contribuicoes.errors }}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        Descreva como cada participante contribuiu para a conquista.
+                                    </small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="{{ form.impacto.id_for_label }}" class="form-label">Nível de Impacto</label>
+                                    {{ form.impacto }}
+                                    {% if form.impacto.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.impacto.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-12">
+                                    <label for="{{ form.beneficiarios.id_for_label }}" class="form-label">Beneficiários</label>
+                                    {{ form.beneficiarios }}
+                                    {% if form.beneficiarios.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.beneficiarios.errors }}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        Quem se beneficiou ou foi impactado por esta conquista?
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Reflexão e Impacto -->
+                        <div class="mb-4">
+                            <h3 class="h5 mb-3">Reflexão e Impacto</h3>
+                            <div class="row g-3">
+                                <div class="col-md-12">
+                                    <label for="{{ form.reflexao_impacto.id_for_label }}" class="form-label">Reflexão sobre o Impacto</label>
+                                    {{ form.reflexao_impacto }}
+                                    {% if form.reflexao_impacto.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.reflexao_impacto.errors }}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        Reflita sobre o impacto desta conquista na comunidade e seu valor para a aprendizagem coletiva.
+                                    </small>
+                                </div>
+                                <div class="col-md-12">
+                                    <label for="{{ form.proximos_passos.id_for_label }}" class="form-label">Próximos Passos</label>
+                                    {{ form.proximos_passos }}
+                                    {% if form.proximos_passos.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.proximos_passos.errors }}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        Como esta conquista pode evoluir ou inspirar novas iniciativas?
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Evidências e Links -->
+                        <div class="mb-4">
+                            <h3 class="h5 mb-3">Evidências e Links</h3>
+                            <div class="row g-3">
+                                <div class="col-md-12">
+                                    <label for="{{ form.evidencias.id_for_label }}" class="form-label">Evidências</label>
+                                    {{ form.evidencias }}
+                                    {% if form.evidencias.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.evidencias.errors }}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        Adicione arquivos que documentem o processo colaborativo e os resultados.
+                                    </small>
+                                </div>
+                                <div class="col-md-12">
+                                    <label for="{{ form.links_relacionados.id_for_label }}" class="form-label">Links Relacionados</label>
+                                    {{ form.links_relacionados }}
+                                    {% if form.links_relacionados.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.links_relacionados.errors }}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        Links para trabalhos, recursos ou projetos relacionados.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'listas_verificacao:lista_conquistas' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Criar Conquista
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Inicializa o select2 para melhor experiência de seleção
+        $('.select2').select2({
+            theme: 'bootstrap-5',
+            width: '100%'
+        });
+
+        // Validação do formulário
+        (function () {
+            'use strict'
+            var forms = document.querySelectorAll('.needs-validation')
+            Array.prototype.slice.call(forms).forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    form.classList.add('was-validated')
+                }, false)
+            })
+        })()
+    });
+</script>
+{% endblock %} 

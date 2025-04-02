@@ -1,0 +1,52 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block listas_content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <h2>{{ titulo|default:"Criar Checklist" }}</h2>
+            
+            <div class="card">
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        
+                        <div class="mt-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Guardar
+                            </button>
+                            <a href="{% url 'listas_verificacao:lista_checklists' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Informações</h5>
+                    <p class="card-text">
+                        Ao criar ou editar um checklist, pode:
+                    </p>
+                    <ul>
+                        <li>Definir um título claro para o checklist</li>
+                        <li>Adicionar uma descrição detalhada</li>
+                        <li>Organizar os itens em categorias</li>
+                        <li>Definir a ordem dos itens</li>
+                    </ul>
+                    <p class="card-text">
+                        Os itens do checklist serão apresentados aos alunos na ordem definida,
+                        e eles poderão assinalar o seu progresso em cada um deles.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

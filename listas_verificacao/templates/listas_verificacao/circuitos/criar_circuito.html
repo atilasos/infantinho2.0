@@ -1,0 +1,152 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Criar Circuito de Comunicação{% endblock %}
+
+{% block listas_content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Criar Circuito de Comunicação</h1>
+        <a href="{% url 'listas_verificacao:lista_circuitos' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar para Lista
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <!-- Informações Básicas -->
+                    <div class="col-md-6">
+                        <h4 class="mb-3">Informações Básicas</h4>
+                        <div class="mb-3">
+                            <label for="titulo" class="form-label">Título</label>
+                            <input type="text" class="form-control" id="titulo" name="titulo" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="descricao" class="form-label">Descrição</label>
+                            <textarea class="form-control" id="descricao" name="descricao" rows="4" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="tipo" class="form-label">Tipo de Circuito</label>
+                            <select class="form-select" id="tipo" name="tipo" required>
+                                {% for valor, nome in tipos %}
+                                <option value="{{ valor }}">{{ nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Data e Duração -->
+                    <div class="col-md-6">
+                        <h4 class="mb-3">Data e Duração</h4>
+                        <div class="mb-3">
+                            <label for="data_realizacao" class="form-label">Data de Realização</label>
+                            <input type="datetime-local" class="form-control" id="data_realizacao" name="data_realizacao" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="duracao" class="form-label">Duração (em minutos)</label>
+                            <input type="number" class="form-control" id="duracao" name="duracao" min="1" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <!-- Participantes e Aprendizagens -->
+                    <div class="col-md-6">
+                        <h4 class="mb-3">Participantes e Aprendizagens</h4>
+                        <div class="mb-3">
+                            <label for="turma" class="form-label">Turma</label>
+                            <select class="form-select" id="turma" name="turma" required>
+                                {% for turma in turmas %}
+                                <option value="{{ turma.id }}">{{ turma.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="participantes" class="form-label">Participantes</label>
+                            <select class="form-select select2" id="participantes" name="participantes" multiple>
+                                {% for aluno in alunos %}
+                                <option value="{{ aluno.id }}">{{ aluno.get_full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="aprendizagens" class="form-label">Aprendizagens Relacionadas</label>
+                            <select class="form-select select2" id="aprendizagens" name="aprendizagens" multiple>
+                                {% for aprendizagem in aprendizagens %}
+                                <option value="{{ aprendizagem.id }}">{{ aprendizagem.codigo }} - {{ aprendizagem.descricao|truncatechars:100 }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Documentação -->
+                    <div class="col-md-6">
+                        <h4 class="mb-3">Documentação</h4>
+                        <div class="mb-3">
+                            <label for="pontos_principais" class="form-label">Pontos Principais</label>
+                            <textarea class="form-control" id="pontos_principais" name="pontos_principais" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="conclusoes" class="form-label">Conclusões</label>
+                            <textarea class="form-control" id="conclusoes" name="conclusoes" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="acoes_decorrentes" class="form-label">Ações Decorrentes</label>
+                            <textarea class="form-control" id="acoes_decorrentes" name="acoes_decorrentes" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                    <button type="button" class="btn btn-outline-secondary me-md-2" onclick="window.history.back();">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Criar Circuito</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Inicializa o select2 para melhor experiência de seleção
+        $('.select2').select2({
+            theme: 'bootstrap-5',
+            width: '100%'
+        });
+
+        // Atualiza a lista de participantes e aprendizagens quando a turma é alterada
+        $('#turma').on('change', function() {
+            var turmaId = $(this).val();
+            $.get('{% url "listas_verificacao:get_turma_dados" turma_id=0 %}'.replace('0', turmaId), function(data) {
+                // Atualizar participantes
+                var participantes = $('#participantes');
+                participantes.empty();
+                data.alunos.forEach(function(aluno) {
+                    participantes.append(new Option(aluno.nome, aluno.id));
+                });
+                participantes.trigger('change');
+
+                // Atualizar aprendizagens
+                var aprendizagens = $('#aprendizagens');
+                aprendizagens.empty();
+                data.aprendizagens.forEach(function(aprendizagem) {
+                    aprendizagens.append(new Option(aprendizagem.texto, aprendizagem.id));
+                });
+                aprendizagens.trigger('change');
+            });
+        });
+
+        // Configura validação de data/hora
+        var now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        $('#data_realizacao').attr('min', now.toISOString().slice(0, 16));
+    });
+</script>
+{% endblock %} 

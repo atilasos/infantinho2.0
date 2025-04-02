@@ -188,11 +188,26 @@
                     {% if user.is_authenticated %}
                         {% if user.is_teacher %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'listas_verificacao:dashboard_professor' %}">Dashboard</a>
+                            <a class="nav-link" href="{% url 'listas_verificacao:lista_checklists' %}">Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'listas_verificacao:lista_turmas' %}">Turmas</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'listas_verificacao:gerenciar_aprendizagens' %}">Aprendizagens</a>
                         </li>
                         {% elif user.is_student %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'listas_verificacao:lista_aluno' %}">Minhas Aprendizagens</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'listas_verificacao:lista_duvidas' %}">Dúvidas</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'listas_verificacao:lista_diarios' %}">Diário</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'listas_verificacao:lista_metas' %}">Metas</a>
                         </li>
                         {% endif %}
                     {% endif %}
@@ -268,6 +283,7 @@
                                 <li><a class="dropdown-item" href="{% url 'blog:moderate_comments' %}">Moderar Comentários</a></li>
                                 <li><a class="dropdown-item" href="{% url 'blog:manage_users' %}">Gerenciar Utilizadores</a></li>
                                 <li><a class="dropdown-item" href="{% url 'listas_verificacao:lista_turmas' %}">Gerenciar Turmas</a></li>
+                                <li><a class="dropdown-item" href="{% url 'listas_verificacao:gerenciar_aprendizagens' %}">Gerenciar Aprendizagens</a></li>
                             {% elif user.is_student %}
                                 <li><a class="dropdown-item" href="{% url 'listas_verificacao:lista_aluno' %}">Minhas Aprendizagens</a></li>
                             {% endif %}
@@ -278,7 +294,10 @@
                     </li>
                     {% else %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'login' %}">Entrar</a>
+                        <a class="nav-link" href="{% url 'microsoft:to_auth_redirect' %}">Entrar</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'accounts:demo_login' %}">Demo</a>
                     </li>
                     {% endif %}
                 </ul>
@@ -318,7 +337,9 @@
                         <li><a href="{% url 'blog:tag_list' %}">Tags</a></li>
                         {% if user.is_authenticated %}
                             {% if user.is_teacher %}
-                            <li><a href="{% url 'listas_verificacao:dashboard_professor' %}">Dashboard do Professor</a></li>
+                            <li><a href="{% url 'listas_verificacao:lista_checklists' %}">Dashboard do Professor</a></li>
+                            <li><a href="{% url 'listas_verificacao:lista_turmas' %}">Gerenciar Turmas</a></li>
+                            <li><a href="{% url 'listas_verificacao:gerenciar_aprendizagens' %}">Gerenciar Aprendizagens</a></li>
                             {% elif user.is_student %}
                             <li><a href="{% url 'listas_verificacao:lista_aluno' %}">Minhas Aprendizagens</a></li>
                             {% endif %}

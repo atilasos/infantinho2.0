@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dúvidas da Turma {{ turma.nome }} - Infantinho 2.0{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-4">Dúvidas da Turma</h1>
+            <p class="lead">{{ turma.nome }}</p>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Filtros</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="estado" class="form-label">Estado</label>
+                    <select name="estado" id="estado" class="form-select">
+                        <option value="">Todos</option>
+                        {% for estado_value, estado_nome in estados %}
+                        <option value="{{ estado_value }}" {% if request.GET.estado == estado_value %}selected{% endif %}>
+                            {{ estado_nome }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="categoria" class="form-label">Categoria</label>
+                    <select name="categoria" id="categoria" class="form-select">
+                        <option value="">Todas</option>
+                        {% for categoria_value, categoria_nome in categorias %}
+                        <option value="{{ categoria_value }}" {% if request.GET.categoria == categoria_value %}selected{% endif %}>
+                            {{ categoria_nome }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="prioridade" class="form-label">Prioridade</label>
+                    <select name="prioridade" id="prioridade" class="form-select">
+                        <option value="">Todas</option>
+                        {% for prioridade_value, prioridade_nome in prioridades %}
+                        <option value="{{ prioridade_value }}" {% if request.GET.prioridade == prioridade_value %}selected{% endif %}>
+                            {{ prioridade_nome }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter"></i> Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Dúvidas -->
+    <div class="row">
+        {% for duvida in duvidas %}
+        <div class="col-12 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">{{ duvida.titulo }}</h5>
+                    <div>
+                        <span class="badge bg-{{ duvida.estado|lower }} me-2">{{ duvida.get_estado_display }}</span>
+                        <span class="badge bg-{{ duvida.prioridade|lower }}">{{ duvida.get_prioridade_display }}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Autor:</strong> {{ duvida.autor.get_full_name }}
+                        <br>
+                        <strong>Aprendizagem:</strong> {{ duvida.aprendizagem.codigo }}
+                        <br>
+                        <strong>Categoria:</strong> {{ duvida.get_categoria_display }}
+                    </div>
+                    <p class="card-text">{{ duvida.descricao|truncatewords:50 }}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">Criada em {{ duvida.data_criacao|date:"d/m/Y H:i" }}</small>
+                        <a href="{% url 'listas_verificacao:detalhe_duvida' duvida.id %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-eye"></i> Ver Detalhes
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> Nenhuma dúvida encontrada.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Atualizar formulário automaticamente ao mudar os filtros
+    document.querySelectorAll('select').forEach(select => {
+        select.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+</script>
+{% endblock %} 

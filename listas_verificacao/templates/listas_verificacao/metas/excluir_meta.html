@@ -1,0 +1,104 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+
+{% block title %}Excluir Meta - {{ meta.titulo }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'lista_metas' %}">Metas</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'detalhe_meta' meta.id %}">{{ meta.titulo }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Excluir Meta</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h1 class="h2 mb-0">Excluir Meta</h1>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger mb-4">
+                        <h5 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> Atenção!</h5>
+                        <p>
+                            Você está prestes a excluir a meta <strong>{{ meta.titulo }}</strong>. 
+                            Esta ação não pode ser desfeita e todos os dados relacionados serão perdidos, incluindo:
+                        </p>
+                        <ul class="mb-0">
+                            <li>Reflexões registradas</li>
+                            <li>Acompanhamentos</li>
+                            <li>Ajustes solicitados</li>
+                            <li>Histórico de progresso</li>
+                        </ul>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Detalhes da Meta</h5>
+                            <dl class="row mb-0">
+                                <dt class="col-sm-3">Título</dt>
+                                <dd class="col-sm-9">{{ meta.titulo }}</dd>
+
+                                <dt class="col-sm-3">Tipo</dt>
+                                <dd class="col-sm-9">{{ meta.get_tipo_display }}</dd>
+
+                                <dt class="col-sm-3">Turma</dt>
+                                <dd class="col-sm-9">{{ meta.turma.nome }}</dd>
+
+                                <dt class="col-sm-3">Criada por</dt>
+                                <dd class="col-sm-9">{{ meta.criador.get_full_name }}</dd>
+
+                                <dt class="col-sm-3">Criada em</dt>
+                                <dd class="col-sm-9">{{ meta.data_criacao|date:"d/m/Y H:i" }}</dd>
+
+                                <dt class="col-sm-3">Status</dt>
+                                <dd class="col-sm-9">
+                                    <span class="badge {% if meta.status == 'concluida' %}bg-success{% elif meta.status == 'em_andamento' %}bg-primary{% else %}bg-warning{% endif %}">
+                                        {{ meta.get_status_display }}
+                                    </span>
+                                </dd>
+
+                                <dt class="col-sm-3">Progresso</dt>
+                                <dd class="col-sm-9">
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar" role="progressbar" style="width: {{ meta.progresso }}%;" 
+                                             aria-valuenow="{{ meta.progresso }}" aria-valuemin="0" aria-valuemax="100">
+                                            {{ meta.progresso }}%
+                                        </div>
+                                    </div>
+                                </dd>
+
+                                <dt class="col-sm-3">Participantes</dt>
+                                <dd class="col-sm-9">{{ meta.participantes.count }} participante(s)</dd>
+
+                                <dt class="col-sm-3">Reflexões</dt>
+                                <dd class="col-sm-9">{{ meta.reflexoes.count }} reflexão(ões)</dd>
+
+                                <dt class="col-sm-3">Acompanhamentos</dt>
+                                <dd class="col-sm-9">{{ meta.acompanhamentos.count }} acompanhamento(s)</dd>
+
+                                <dt class="col-sm-3">Ajustes</dt>
+                                <dd class="col-sm-9">{{ meta.ajustes.count }} ajuste(s)</dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'detalhe_meta' meta.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Confirmar Exclusão
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

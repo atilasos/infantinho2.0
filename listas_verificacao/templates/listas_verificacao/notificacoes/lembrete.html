@@ -1,0 +1,26 @@
+{% load static %}
+
+<div class="card mb-3 {% if not notificacao.lida %}border-primary{% endif %}">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h5 class="card-title">
+                    <i class="fas fa-bell text-primary"></i>
+                    {{ notificacao.titulo }}
+                </h5>
+                <p class="card-text">{{ notificacao.mensagem }}</p>
+                {% if notificacao.link %}
+                <a href="{{ notificacao.link }}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-external-link-alt"></i> Ver Detalhes
+                </a>
+                {% endif %}
+            </div>
+            <div class="text-muted small">
+                {{ notificacao.data_criacao|date:"d/m/Y H:i" }}
+                {% if not notificacao.lida %}
+                <span class="badge bg-primary">Nova</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div> 

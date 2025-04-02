@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Configuração de Exportação - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">Configuração de Exportação</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label for="{{ form.formato_padrao.id_for_label }}" class="form-label">Formato Padrão</label>
+                            {{ form.formato_padrao }}
+                            {% if form.formato_padrao.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.formato_padrao.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Formato padrão para novas exportações.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                {{ form.incluir_cabecalho }}
+                                <label class="form-check-label" for="{{ form.incluir_cabecalho.id_for_label }}">Incluir Cabeçalho</label>
+                            </div>
+                            {% if form.incluir_cabecalho.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.incluir_cabecalho.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Se marcado, as exportações incluirão o cabeçalho com os nomes das colunas.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.separador.id_for_label }}" class="form-label">Separador</label>
+                            {{ form.separador }}
+                            {% if form.separador.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.separador.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Caractere usado para separar os campos nas exportações CSV.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.codificacao.id_for_label }}" class="form-label">Codificação</label>
+                            {{ form.codificacao }}
+                            {% if form.codificacao.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.codificacao.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Codificação de caracteres para as exportações.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                {{ form.comprimir }}
+                                <label class="form-check-label" for="{{ form.comprimir.id_for_label }}">Comprimir Exportações</label>
+                            </div>
+                            {% if form.comprimir.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.comprimir.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Se marcado, as exportações serão comprimidas em formato ZIP.</div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar Configurações
+                            </button>
+                            <a href="{% url 'exportacao_backup:lista_exportacoes' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

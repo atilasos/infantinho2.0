@@ -1,0 +1,146 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+
+{% block title %}Registrar Acompanhamento - {{ meta.titulo }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'lista_metas' %}">Metas</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'detalhe_meta' meta.id %}">{{ meta.titulo }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Registrar Acompanhamento</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h1 class="h2 mb-0">Registrar Acompanhamento</h1>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <h5 class="alert-heading"><i class="fas fa-chart-line"></i> Sobre Acompanhamentos</h5>
+                        <p class="mb-0">
+                            O acompanhamento regular ajuda a manter o foco e identificar necessidades de ajuste.
+                            Use este espaço para registrar o progresso, fazer observações e sugerir recursos que podem ajudar
+                            no desenvolvimento da meta.
+                        </p>
+                    </div>
+
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="mb-4">
+                            <label for="{{ form.progresso.id_for_label }}" class="form-label">Progresso (%)</label>
+                            <div class="input-group">
+                                {{ form.progresso }}
+                                <span class="input-group-text">%</span>
+                            </div>
+                            {% if form.progresso.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.progresso.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Indique a porcentagem de conclusão da meta.</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.observacoes.id_for_label }}" class="form-label">Observações</label>
+                            {{ form.observacoes }}
+                            {% if form.observacoes.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.observacoes.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Registre suas observações sobre o desenvolvimento da meta. 
+                                Como está o progresso? Quais aspectos merecem atenção?
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.sugestoes.id_for_label }}" class="form-label">Sugestões</label>
+                            {{ form.sugestoes }}
+                            {% if form.sugestoes.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.sugestoes.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Que sugestões você tem para melhorar o desenvolvimento da meta? 
+                                Que ações poderiam ser tomadas?
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.recursos_sugeridos.id_for_label }}" class="form-label">Recursos Sugeridos</label>
+                            {{ form.recursos_sugeridos }}
+                            {% if form.recursos_sugeridos.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.recursos_sugeridos.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Indique recursos, materiais ou ferramentas que podem ajudar no desenvolvimento da meta.
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'detalhe_meta' meta.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Registrar Acompanhamento
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+    $(document).ready(function() {
+        $('.select2').select2({
+            theme: 'bootstrap-5'
+        });
+
+        // Validação do formulário
+        (function () {
+            'use strict'
+            var forms = document.querySelectorAll('.needs-validation')
+            Array.prototype.slice.call(forms)
+                .forEach(function (form) {
+                    form.addEventListener('submit', function (event) {
+                        if (!form.checkValidity()) {
+                            event.preventDefault()
+                            event.stopPropagation()
+                        }
+                        form.classList.add('was-validated')
+                    }, false)
+                })
+        })()
+    });
+</script>
+{% endblock %} 

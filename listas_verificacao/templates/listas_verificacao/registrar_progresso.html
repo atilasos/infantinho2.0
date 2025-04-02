@@ -13,32 +13,27 @@
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-body">
-            <form method="post">
-                {% csrf_token %}
-                
+    <form method="post">
+        {% csrf_token %}
+        <div class="card">
+            <div class="card-body">
                 <div class="list-group">
-                    {% for aprendizagem in lista.aprendizagens.all %}
+                    {% for aprendizagem in aprendizagens %}
                     <div class="list-group-item">
-                        <div class="mb-3">
-                            <h6 class="mb-1">{{ aprendizagem.codigo }}</h6>
-                            <p class="mb-1">{{ aprendizagem.descricao }}</p>
-                        </div>
-                        
-                        <div class="btn-group" role="group">
-                            {% for estado_valor, estado_nome in estados %}
-                            <input type="radio" 
-                                   class="btn-check" 
-                                   name="estado_{{ aprendizagem.id }}" 
-                                   id="estado_{{ aprendizagem.id }}_{{ estado_valor }}"
-                                   value="{{ estado_valor }}"
-                                   {% if progresso|get_item:aprendizagem.id and progresso|get_item:aprendizagem.id.estado == estado_valor %}checked{% endif %}>
-                            <label class="btn btn-outline-primary" 
-                                   for="estado_{{ aprendizagem.id }}_{{ estado_valor }}">
-                                {{ estado_nome }}
-                            </label>
-                            {% endfor %}
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ aprendizagem.codigo }}</h6>
+                                <p class="mb-1">{{ aprendizagem.descricao }}</p>
+                            </div>
+                            <div>
+                                <select name="aprendizagem_{{ aprendizagem.id }}" class="form-select">
+                                    {% for estado_value, estado_nome in estados %}
+                                    <option value="{{ estado_value }}" {% if progressos|get_item:aprendizagem.id == estado_value %}selected{% endif %}>
+                                        {{ estado_nome }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
                         </div>
                     </div>
                     {% endfor %}
@@ -52,36 +47,31 @@
                         <i class="fas fa-arrow-left"></i> Voltar
                     </a>
                 </div>
-            </form>
+            </div>
         </div>
-    </div>
+    </form>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    // Adicionar animação suave ao scroll
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            document.querySelector(this.getAttribute('href')).scrollIntoView({
-                behavior: 'smooth'
-            });
-        });
-    });
-
-    // Adicionar estilos para os botões de estado
-    document.querySelectorAll('.btn-check').forEach(radio => {
-        radio.addEventListener('change', function() {
-            const label = document.querySelector(`label[for="${this.id}"]`);
-            if (this.checked) {
-                label.classList.remove('btn-outline-primary');
-                label.classList.add('btn-primary');
+    // Adicionar classes de cores aos selects baseado no estado
+    document.querySelectorAll('select').forEach(select => {
+        select.addEventListener('change', function() {
+            this.className = 'form-select';
+            if (this.value === 'concluido') {
+                this.classList.add('border-success');
+            } else if (this.value === 'em_progresso') {
+                this.classList.add('border-primary');
+            } else if (this.value === 'com_dificuldade') {
+                this.classList.add('border-warning');
             } else {
-                label.classList.remove('btn-primary');
-                label.classList.add('btn-outline-primary');
+                this.classList.add('border-secondary');
             }
         });
+        
+        // Trigger o evento para aplicar as cores iniciais
+        select.dispatchEvent(new Event('change'));
     });
 </script>
 {% endblock %} 

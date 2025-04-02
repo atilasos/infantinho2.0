@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Exportações - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Exportações</h1>
+        <a href="{% url 'exportacao_backup:criar_exportacao' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nova Exportação
+        </a>
+    </div>
+
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-body">
+            {% if exportacoes %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Formato</th>
+                            <th>Status</th>
+                            <th>Tamanho</th>
+                            <th>Filtros</th>
+                            <th>Descrição</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for exportacao in exportacoes %}
+                        <tr>
+                            <td>{{ exportacao.data_criacao|date:"d/m/Y H:i" }}</td>
+                            <td>{{ exportacao.get_formato_display }}</td>
+                            <td>
+                                <span class="badge {% if exportacao.status == 'concluido' %}bg-success{% elif exportacao.status == 'erro' %}bg-danger{% else %}bg-warning{% endif %}">
+                                    {{ exportacao.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ exportacao.tamanho|filesizeformat }}</td>
+                            <td>{{ exportacao.filtros|truncatechars:30 }}</td>
+                            <td>{{ exportacao.descricao|truncatechars:50 }}</td>
+                            <td>
+                                {% if exportacao.status == 'concluido' %}
+                                <a href="{% url 'exportacao_backup:download_exportacao' exportacao.id %}" class="btn btn-sm btn-outline-primary" title="Download">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <p class="text-muted">Nenhuma exportação encontrada.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

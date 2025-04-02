@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Dashboard do Professor - Infantinho 2.0{% endblock %}
+{% block title %}Painel de Controlo do Professor - Infantinho 2.0{% endblock %}
 
 {% block content %}
 <div class="container">
     <div class="row mb-4">
         <div class="col">
-            <h1 class="display-4">Dashboard do Professor</h1>
+            <h1 class="display-4">Painel de Controlo do Professor</h1>
         </div>
         <div class="col-auto align-self-center">
             <a href="{% url 'listas_verificacao:criar_turma' %}" class="btn btn-primary">
@@ -40,7 +40,7 @@
         </div>
     {% else %}
         <div class="alert alert-info">
-            <i class="fas fa-info-circle"></i> Você ainda não tem turmas cadastradas.
+            <i class="fas fa-info-circle"></i> Ainda não tem turmas registadas.
             <a href="{% url 'listas_verificacao:criar_turma' %}" class="alert-link">Criar uma turma</a>
         </div>
     {% endif %}
