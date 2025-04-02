@@ -1,0 +1,57 @@
+{% extends "personalizacao/base_personalizacao.html" %}
+
+{% block title %}Temas - {{ block.super }}{% endblock %}
+
+{% block personalizacao_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Temas</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'personalizacao:criar_tema' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Novo Tema
+        </a>
+    </div>
+</div>
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    {% for tema in temas %}
+    <div class="col">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">{{ tema.nome }}</h5>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="tema_{{ tema.id }}" 
+                           {% if tema.ativo %}checked{% endif %} disabled>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="card-text">{{ tema.descricao|default:"Sem descrição" }}</p>
+                <div class="mb-3">
+                    <small class="text-muted">Fonte Principal:</small>
+                    <span class="badge bg-secondary">{{ tema.fonte_principal }}</span>
+                </div>
+                <div class="mb-3">
+                    <small class="text-muted">Fonte Secundária:</small>
+                    <span class="badge bg-secondary">{{ tema.fonte_secundaria }}</span>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="btn-group w-100">
+                    <a href="{% url 'personalizacao:editar_tema' tema.id %}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+                    <a href="{% url 'personalizacao:excluir_tema' tema.id %}" class="btn btn-outline-danger">
+                        <i class="fas fa-trash"></i> Excluir
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> Nenhum tema cadastrado.
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %} 

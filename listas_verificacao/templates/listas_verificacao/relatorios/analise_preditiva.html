@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load listas_filters %}
+
+{% block title %}Análise Preditiva - {{ turma.nome }} - Infantinho 2.0{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Cabeçalho -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1>Análise Preditiva de Desempenho</h1>
+            <h2 class="h4 text-muted">{{ turma.nome }}</h2>
+            <p class="text-muted">Gerado em {{ relatorio.data_geracao|date:"d/m/Y H:i" }}</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'listas_verificacao:dashboard_turma' turma.id %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+
+    <!-- Métricas Gerais -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Progresso Médio</h5>
+                    <div class="progress mb-2">
+                        <div class="progress-bar" role="progressbar" style="width: {{ relatorio.media_progresso }}%">
+                            {{ relatorio.media_progresso }}%
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Alunos em Risco Alto</h5>
+                    <p class="card-text display-4 text-danger">{{ relatorio.alunos_risco_alto }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Alunos em Risco Médio</h5>
+                    <p class="card-text display-4 text-warning">{{ relatorio.alunos_risco_medio }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Alunos em Risco Baixo</h5>
+                    <p class="card-text display-4 text-success">{{ relatorio.alunos_risco_baixo }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Análise por Aluno -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title mb-0">Análise por Aluno</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Aluno</th>
+                            <th>Progresso Atual</th>
+                            <th>Velocidade de Progresso</th>
+                            <th>Tendência de Dificuldades</th>
+                            <th>Previsão de Conclusão</th>
+                            <th>Risco de Dificuldade</th>
+                            <th>Tempo Estimado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for analise in relatorio.analise_alunos %}
+                        <tr>
+                            <td>{{ analise.aluno.get_full_name }}</td>
+                            <td>
+                                <div class="progress">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: {{ analise.progresso_geral }}%"
+                                         aria-valuenow="{{ analise.progresso_geral }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        {{ analise.progresso_geral }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {{ analise.velocidade_progresso }}% ao dia
+                            </td>
+                            <td>
+                                {% if analise.tendencia_dificuldades == 'aumentando' %}
+                                    <span class="badge badge-danger">
+                                        <i class="fas fa-arrow-up"></i> Aumentando
+                                    </span>
+                                {% elif analise.tendencia_dificuldades == 'diminuindo' %}
+                                    <span class="badge badge-success">
+                                        <i class="fas fa-arrow-down"></i> Diminuindo
+                                    </span>
+                                {% else %}
+                                    <span class="badge badge-secondary">
+                                        <i class="fas fa-minus"></i> Estável
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="progress">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: {{ analise.previsao.probabilidade_conclusao }}%"
+                                         aria-valuenow="{{ analise.previsao.probabilidade_conclusao }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        {{ analise.previsao.probabilidade_conclusao }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if analise.previsao.risco_dificuldade == 'alto' %}
+                                    <span class="badge badge-danger">Alto</span>
+                                {% elif analise.previsao.risco_dificuldade == 'médio' %}
+                                    <span class="badge badge-warning">Médio</span>
+                                {% else %}
+                                    <span class="badge badge-success">Baixo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if analise.previsao.tempo_estimado_conclusao %}
+                                    {{ analise.previsao.tempo_estimado_conclusao }} dias
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">
+                                <p class="text-muted mb-0">Nenhum dado disponível para análise.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Adicionar tooltips
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,169 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+
+{% block title %}Projetos Colaborativos{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Cabeçalho -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 mb-0">Projetos Colaborativos</h1>
+        <a href="{% url 'listas_verificacao:criar_projeto' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Novo Projeto
+        </a>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="estado" class="form-label">Estado</label>
+                    <select class="form-select" id="estado" name="estado">
+                        <option value="">Todos os estados</option>
+                        {% for estado_id, estado_nome in estados %}
+                            <option value="{{ estado_id }}" {% if estado_id == estado_filtro %}selected{% endif %}>
+                                {{ estado_nome }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="turma" class="form-label">Turma</label>
+                    <select class="form-select" id="turma" name="turma">
+                        <option value="">Todas as turmas</option>
+                        {% for turma in turmas %}
+                            <option value="{{ turma.id }}" {% if turma.id == turma_filtro %}selected{% endif %}>
+                                {{ turma.nome }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <div class="d-grid gap-2 w-100">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter"></i> Filtrar
+                        </button>
+                        <a href="{% url 'listas_verificacao:lista_projetos' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Limpar Filtros
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Projetos -->
+    <div class="row">
+        {% for projeto in projetos %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="card-title mb-0">{{ projeto.titulo }}</h5>
+                            <span class="badge {% if projeto.estado == 'em_andamento' %}bg-primary{% elif projeto.estado == 'concluido' %}bg-success{% elif projeto.estado == 'pausado' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                {{ projeto.get_estado_display }}
+                            </span>
+                        </div>
+                        
+                        <p class="card-text text-muted small mb-3">
+                            {{ projeto.descricao|truncatewords:30 }}
+                        </p>
+
+                        <div class="mb-3">
+                            <h6 class="text-muted mb-2">Participantes</h6>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for participante in projeto.participantes.all %}
+                                    <span class="badge bg-light text-dark">
+                                        <i class="fas fa-user-circle"></i> {{ participante.get_full_name }}
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        {% if projeto.aprendizagens.all %}
+                            <div class="mb-3">
+                                <h6 class="text-muted mb-2">Aprendizagens</h6>
+                                <div class="d-flex flex-wrap gap-2">
+                                    {% for aprendizagem in projeto.aprendizagens.all %}
+                                        <span class="badge bg-info">
+                                            {{ aprendizagem.codigo }}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-calendar"></i> Início: {{ projeto.data_inicio|date:"d/m/Y" }}
+                            </small>
+                            <a href="{% url 'listas_verificacao:detalhe_projeto' projeto.id %}" class="btn btn-outline-primary btn-sm">
+                                Ver Detalhes
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Nenhum projeto colaborativo encontrado.
+                    {% if user.is_professor %}
+                        <a href="{% url 'listas_verificacao:criar_projeto' %}" class="alert-link">Criar um novo projeto</a> para começar.
+                    {% else %}
+                        Aguarde a criação de novos projetos pela professora.
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Paginação -->
+    {% if projetos.has_other_pages %}
+        <nav aria-label="Navegação de páginas" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if projetos.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ projetos.previous_page_number }}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}{% if turma_filtro %}&turma={{ turma_filtro }}{% endif %}" aria-label="Anterior">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+
+                {% for num in projetos.paginator.page_range %}
+                    {% if projetos.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > projetos.number|add:'-3' and num < projetos.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}{% if turma_filtro %}&turma={{ turma_filtro }}{% endif %}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if projetos.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ projetos.next_page_number }}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}{% if turma_filtro %}&turma={{ turma_filtro }}{% endif %}" aria-label="Próximo">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Inicializa o select2 para melhor experiência de seleção
+        $('.form-select').select2({
+            theme: 'bootstrap-5',
+            width: '100%'
+        });
+    });
+</script>
+{% endblock %} 

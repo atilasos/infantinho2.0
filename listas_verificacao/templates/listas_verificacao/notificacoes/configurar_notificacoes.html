@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Configurar Notificações{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Configurações de Notificação</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <h5>Tipos de Notificação</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.notif_baixo_progresso|as_crispy_field }}
+                                    {{ form.notif_prazos|as_crispy_field }}
+                                    {{ form.notif_duvidas|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.notif_conquistas|as_crispy_field }}
+                                    {{ form.notif_feedback|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h5>Configurações de Email</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.receber_emails|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.frequencia_emails|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h5>Horários Permitidos</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.horario_inicio|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.horario_fim|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h5>Dias da Semana</h5>
+                            <div class="row">
+                                <div class="col-12">
+                                    {{ form.dias_semana|as_crispy_field }}
+                                    <small class="form-text text-muted">
+                                        1=Segunda, 2=Terça, 3=Quarta, 4=Quinta, 5=Sexta, 6=Sábado, 7=Domingo
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">
+                                Salvar Configurações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Atualiza a visibilidade das configurações de email
+    function atualizarConfiguracoesEmail() {
+        var receberEmails = document.getElementById('id_receber_emails').checked;
+        var frequenciaDiv = document.getElementById('div_id_frequencia_emails');
+        var horariosDiv = document.getElementById('div_id_horario_inicio').closest('.mb-4');
+        var diasDiv = document.getElementById('div_id_dias_semana').closest('.mb-4');
+        
+        if (receberEmails) {
+            frequenciaDiv.style.display = 'block';
+            horariosDiv.style.display = 'block';
+            diasDiv.style.display = 'block';
+        } else {
+            frequenciaDiv.style.display = 'none';
+            horariosDiv.style.display = 'none';
+            diasDiv.style.display = 'none';
+        }
+    }
+    
+    // Adiciona o listener para o checkbox de receber emails
+    var receberEmailsCheckbox = document.getElementById('id_receber_emails');
+    if (receberEmailsCheckbox) {
+        receberEmailsCheckbox.addEventListener('change', atualizarConfiguracoesEmail);
+        // Executa na carga inicial
+        atualizarConfiguracoesEmail();
+    }
+});
+</script>
+{% endblock %}
+{% endblock %} 

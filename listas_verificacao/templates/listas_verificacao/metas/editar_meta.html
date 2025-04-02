@@ -1,0 +1,248 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+
+{% block title %}Editar Meta - {{ meta.titulo }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'lista_metas' %}">Metas</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'detalhe_meta' meta.id %}">{{ meta.titulo }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Editar Meta</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h1 class="h2 mb-0">Editar Meta de Aprendizagem</h1>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <h5 class="card-title">Informações Básicas</h5>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label for="{{ form.titulo.id_for_label }}" class="form-label">Título</label>
+                                            {{ form.titulo }}
+                                            {% if form.titulo.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.titulo.errors %}
+                                                {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div class="mb-3">
+                                                    <label for="{{ form.tipo.id_for_label }}" class="form-label">Tipo</label>
+                                                    {{ form.tipo }}
+                                                    {% if form.tipo.errors %}
+                                                    <div class="invalid-feedback d-block">
+                                                        {% for error in form.tipo.errors %}
+                                                        {{ error }}
+                                                        {% endfor %}
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="mb-3">
+                                                    <label for="{{ form.turma.id_for_label }}" class="form-label">Turma</label>
+                                                    {{ form.turma }}
+                                                    {% if form.turma.errors %}
+                                                    <div class="invalid-feedback d-block">
+                                                        {% for error in form.turma.errors %}
+                                                        {{ error }}
+                                                        {% endfor %}
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="{{ form.descricao.id_for_label }}" class="form-label">Descrição</label>
+                                            {{ form.descricao }}
+                                            {% if form.descricao.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.descricao.errors %}
+                                                {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <h5 class="card-title">Participantes e Aprendizagens</h5>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label for="{{ form.participantes.id_for_label }}" class="form-label">Participantes</label>
+                                            {{ form.participantes }}
+                                            {% if form.participantes.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.participantes.errors %}
+                                                {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                            <div class="form-text">Selecione os alunos que participarão desta meta.</div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="{{ form.aprendizagens.id_for_label }}" class="form-label">Aprendizagens Relacionadas</label>
+                                            {{ form.aprendizagens }}
+                                            {% if form.aprendizagens.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.aprendizagens.errors %}
+                                                {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                            <div class="form-text">Selecione as aprendizagens que serão desenvolvidas com esta meta.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <h5 class="card-title">Planejamento</h5>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="{{ form.data_inicio.id_for_label }}" class="form-label">Data de Início</label>
+                                                    {{ form.data_inicio }}
+                                                    {% if form.data_inicio.errors %}
+                                                    <div class="invalid-feedback d-block">
+                                                        {% for error in form.data_inicio.errors %}
+                                                        {{ error }}
+                                                        {% endfor %}
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="{{ form.data_fim.id_for_label }}" class="form-label">Data de Término</label>
+                                                    {{ form.data_fim }}
+                                                    {% if form.data_fim.errors %}
+                                                    <div class="invalid-feedback d-block">
+                                                        {% for error in form.data_fim.errors %}
+                                                        {{ error }}
+                                                        {% endfor %}
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="{{ form.justificativa.id_for_label }}" class="form-label">Justificativa</label>
+                                            {{ form.justificativa }}
+                                            {% if form.justificativa.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.justificativa.errors %}
+                                                {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                            <div class="form-text">Explique por que esta meta é importante e como ela contribui para o desenvolvimento dos participantes.</div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="{{ form.plano_acao.id_for_label }}" class="form-label">Plano de Ação</label>
+                                            {{ form.plano_acao }}
+                                            {% if form.plano_acao.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.plano_acao.errors %}
+                                                {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                            <div class="form-text">Descreva as etapas e ações necessárias para alcançar esta meta.</div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="{{ form.recursos_necessarios.id_for_label }}" class="form-label">Recursos Necessários</label>
+                                            {{ form.recursos_necessarios }}
+                                            {% if form.recursos_necessarios.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.recursos_necessarios.errors %}
+                                                {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                            <div class="form-text">Liste os recursos, materiais ou apoios necessários para realizar esta meta.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'detalhe_meta' meta.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar Alterações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+    $(document).ready(function() {
+        $('.select2').select2({
+            theme: 'bootstrap-5'
+        });
+
+        // Validação do formulário
+        (function () {
+            'use strict'
+            var forms = document.querySelectorAll('.needs-validation')
+            Array.prototype.slice.call(forms)
+                .forEach(function (form) {
+                    form.addEventListener('submit', function (event) {
+                        if (!form.checkValidity()) {
+                            event.preventDefault()
+                            event.stopPropagation()
+                        }
+                        form.classList.add('was-validated')
+                    }, false)
+                })
+        })()
+    });
+</script>
+{% endblock %} 

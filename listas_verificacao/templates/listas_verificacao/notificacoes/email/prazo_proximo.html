@@ -1,0 +1,20 @@
+{% extends "listas_verificacao/notificacoes/email/base_email.html" %}
+
+{% block email_content %}
+<div class="prazo-proximo">
+    <p>Olá {{ notificacao.destinatario.get_full_name|default:notificacao.destinatario.username }},</p>
+    
+    <p>Este é um lembrete de que você tem um prazo próximo para a seguinte atividade:</p>
+    
+    <div class="prazo-detalhes">
+        <h3>{{ notificacao.lista_verificacao.titulo }}</h3>
+        {% if notificacao.aprendizagem %}
+        <p><strong>Aprendizagem:</strong> {{ notificacao.aprendizagem.codigo }} - {{ notificacao.aprendizagem.descricao }}</p>
+        {% endif %}
+        <p><strong>Prazo:</strong> {{ notificacao.lista_verificacao.data_limite|date:"d/m/Y" }}</p>
+    </div>
+    
+    <p>Para acessar a lista de verificação e registrar seu progresso, clique no link abaixo:</p>
+    <p><a href="{{ site_url }}{% url 'listas_verificacao:detalhe_lista' notificacao.lista_verificacao.id %}">Ver Lista de Verificação</a></p>
+</div>
+{% endblock %} 

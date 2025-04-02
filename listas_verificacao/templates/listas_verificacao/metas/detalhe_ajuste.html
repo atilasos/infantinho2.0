@@ -1,0 +1,123 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+
+{% block title %}Detalhes do Ajuste - {{ ajuste.meta.titulo }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'lista_metas' %}">Metas</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'detalhe_meta' ajuste.meta.id %}">{{ ajuste.meta.titulo }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Detalhes do Ajuste</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h1 class="h2 mb-0">Detalhes do Ajuste</h1>
+                </div>
+                <div class="card-body">
+                    <div class="alert {% if ajuste.status == 'aprovado' %}alert-success{% elif ajuste.status == 'rejeitado' %}alert-danger{% else %}alert-warning{% endif %} mb-4">
+                        <h5 class="alert-heading">
+                            {% if ajuste.status == 'aprovado' %}
+                            <i class="fas fa-check-circle"></i> Ajuste Aprovado
+                            {% elif ajuste.status == 'rejeitado' %}
+                            <i class="fas fa-times-circle"></i> Ajuste Rejeitado
+                            {% else %}
+                            <i class="fas fa-clock"></i> Ajuste Pendente
+                            {% endif %}
+                        </h5>
+                        <p class="mb-0">
+                            {% if ajuste.status == 'aprovado' %}
+                            Este ajuste foi aprovado e as alterações solicitadas foram aplicadas à meta.
+                            {% elif ajuste.status == 'rejeitado' %}
+                            Este ajuste foi rejeitado e as alterações solicitadas não foram aplicadas.
+                            {% else %}
+                            Este ajuste está aguardando análise do professor responsável.
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Informações do Ajuste</h5>
+                            <dl class="row mb-0">
+                                <dt class="col-sm-3">Solicitante</dt>
+                                <dd class="col-sm-9">{{ ajuste.solicitante.get_full_name }}</dd>
+
+                                <dt class="col-sm-3">Data da Solicitação</dt>
+                                <dd class="col-sm-9">{{ ajuste.data_solicitacao|date:"d/m/Y H:i" }}</dd>
+
+                                <dt class="col-sm-3">Tipo</dt>
+                                <dd class="col-sm-9">{{ ajuste.get_tipo_display }}</dd>
+
+                                <dt class="col-sm-3">Status</dt>
+                                <dd class="col-sm-9">
+                                    <span class="badge {% if ajuste.status == 'aprovado' %}bg-success{% elif ajuste.status == 'rejeitado' %}bg-danger{% else %}bg-warning{% endif %}">
+                                        {{ ajuste.get_status_display }}
+                                    </span>
+                                </dd>
+
+                                {% if ajuste.status != 'pendente' %}
+                                <dt class="col-sm-3">Data da Resposta</dt>
+                                <dd class="col-sm-9">{{ ajuste.data_resposta|date:"d/m/Y H:i" }}</dd>
+
+                                <dt class="col-sm-3">Respondido por</dt>
+                                <dd class="col-sm-9">{{ ajuste.respondido_por.get_full_name }}</dd>
+                                {% endif %}
+                            </dl>
+                        </div>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Detalhes da Solicitação</h5>
+                            <div class="mb-4">
+                                <h6>Descrição</h6>
+                                <p>{{ ajuste.descricao }}</p>
+                            </div>
+
+                            <div class="mb-4">
+                                <h6>Justificativa</h6>
+                                <p>{{ ajuste.justificativa }}</p>
+                            </div>
+
+                            {% if ajuste.resposta %}
+                            <div>
+                                <h6>Resposta</h6>
+                                <p>{{ ajuste.resposta }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if user.is_teacher and ajuste.status == 'pendente' %}
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'detalhe_meta' ajuste.meta.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </a>
+                        <div>
+                            <a href="{% url 'rejeitar_ajuste' ajuste.id %}" class="btn btn-outline-danger me-2">
+                                <i class="fas fa-times"></i> Rejeitar
+                            </a>
+                            <a href="{% url 'aprovar_ajuste' ajuste.id %}" class="btn btn-success">
+                                <i class="fas fa-check"></i> Aprovar
+                            </a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center">
+                        <a href="{% url 'detalhe_meta' ajuste.meta.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Voltar para Meta
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

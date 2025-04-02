@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load listas_filters %}
+
+{% block title %}Relatório de Aprendizagens Pendentes - {{ turma.nome }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>Relatório de Aprendizagens Pendentes</h1>
+            <h2 class="h4 text-muted">{{ turma.nome }}</h2>
+            <p class="text-muted">Gerado em {{ relatorio.data_geracao|date:"d/m/Y H:i" }}</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'listas_verificacao:dashboard_turma' turma.id %}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Métricas Gerais -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total de Listas</h5>
+                    <p class="card-text display-4">{{ relatorio.total_listas }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total de Alunos</h5>
+                    <p class="card-text display-4">{{ relatorio.total_alunos }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total de Pendências</h5>
+                    <p class="card-text display-4">{{ relatorio.total_pendentes }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Alunos com Pendências</h5>
+                    <p class="card-text display-4">{{ relatorio.alunos_com_pendentes }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aprendizagens Pendentes -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title mb-0">Aprendizagens Pendentes de Confirmação</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Aluno</th>
+                            <th>Lista</th>
+                            <th>Total de Pendências</th>
+                            <th>Data Mais Recente</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in relatorio.aprendizagens_pendentes %}
+                        <tr>
+                            <td>{{ item.aluno.get_full_name }}</td>
+                            <td>{{ item.lista.titulo }}</td>
+                            <td>{{ item.total_pendentes }}</td>
+                            <td>{{ item.data_mais_recente|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                <button type="button" 
+                                        class="btn btn-sm btn-primary" 
+                                        data-toggle="modal" 
+                                        data-target="#modalPendencias{{ item.aluno.id }}{{ item.lista.id }}">
+                                    <i class="fas fa-eye"></i> Ver Detalhes
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center">
+                                <p class="text-muted mb-0">Nenhuma aprendizagem pendente de confirmação.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modais de Detalhes -->
+    {% for item in relatorio.aprendizagens_pendentes %}
+    <div class="modal fade" id="modalPendencias{{ item.aluno.id }}{{ item.lista.id }}" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Aprendizagens Pendentes</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <h6>{{ item.aluno.get_full_name }} - {{ item.lista.titulo }}</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Descrição</th>
+                                    <th>Data de Conclusão</th>
+                                    <th>Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for progresso in item.aprendizagens %}
+                                <tr>
+                                    <td>{{ progresso.aprendizagem.codigo }}</td>
+                                    <td>{{ progresso.aprendizagem.descricao }}</td>
+                                    <td>{{ progresso.data_atualizacao|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        <button type="button" 
+                                                class="btn btn-sm btn-success confirmar-aprendizagem" 
+                                                data-progresso-id="{{ progresso.id }}">
+                                            <i class="fas fa-check"></i> Confirmar
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Adicionar tooltips aos elementos
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip()
+    });
+
+    // Função para confirmar aprendizagem
+    $('.confirmar-aprendizagem').click(function() {
+        const progressoId = $(this).data('progresso-id');
+        const button = $(this);
+        
+        $.ajax({
+            url: `/listas_verificacao/progresso/${progressoId}/confirmar/`,
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: function(response) {
+                if (response.success) {
+                    button.closest('tr').fadeOut();
+                    
+                    // Verificar se ainda há pendências na tabela
+                    if (button.closest('tbody').find('tr').length === 0) {
+                        button.closest('.modal').modal('hide');
+                        location.reload();
+                    }
+                } else {
+                    alert('Erro ao confirmar aprendizagem.');
+                }
+            },
+            error: function() {
+                alert('Erro ao confirmar aprendizagem.');
+            }
+        });
+    });
+
+    // Função para obter o token CSRF
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+{% endblock %} 

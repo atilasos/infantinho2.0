@@ -1,0 +1,123 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+
+{% block title %}Dúvidas{% if turma %} - {{ turma.nome }}{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Dúvidas{% if turma %} - {{ turma.nome }}{% endif %}</h2>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Filtros</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="estado" class="form-label">Estado</label>
+                            <select name="estado" id="estado" class="form-select">
+                                <option value="">Todos</option>
+                                {% for estado in estados %}
+                                    <option value="{{ estado.0 }}" {% if request.GET.estado == estado.0 %}selected{% endif %}>
+                                        {{ estado.1 }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="categoria" class="form-label">Categoria</label>
+                            <select name="categoria" id="categoria" class="form-select">
+                                <option value="">Todas</option>
+                                {% for categoria in categorias %}
+                                    <option value="{{ categoria.0 }}" {% if request.GET.categoria == categoria.0 %}selected{% endif %}>
+                                        {{ categoria.1 }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="prioridade" class="form-label">Prioridade</label>
+                            <select name="prioridade" id="prioridade" class="form-select">
+                                <option value="">Todas</option>
+                                {% for prioridade in prioridades %}
+                                    <option value="{{ prioridade.0 }}" {% if request.GET.prioridade == prioridade.0 %}selected{% endif %}>
+                                        {{ prioridade.1 }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary">Filtrar</button>
+                            {% if request.GET %}
+                                <a href="{% if turma %}{% url 'listas_verificacao:lista_duvidas_turma' turma_id=turma.id %}{% else %}{% url 'listas_verificacao:lista_duvidas' %}{% endif %}" class="btn btn-secondary ms-2">Limpar</a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col">
+            {% if duvidas %}
+                {% for duvida in duvidas %}
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="mb-0">
+                                        <a href="{% url 'listas_verificacao:detalhe_duvida' duvida_id=duvida.id %}" class="text-decoration-none">
+                                            {{ duvida.titulo }}
+                                        </a>
+                                    </h5>
+                                    <small class="text-muted">
+                                        {{ duvida.aprendizagem.codigo }} - 
+                                        por {{ duvida.autor.get_full_name }} - 
+                                        {{ duvida.data_criacao|date:"d/m/Y H:i" }}
+                                    </small>
+                                </div>
+                                <div>
+                                    <span class="badge bg-primary">{{ duvida.get_categoria_display }}</span>
+                                    <span class="badge {% if duvida.prioridade == 'alta' %}bg-danger{% elif duvida.prioridade == 'media' %}bg-warning{% else %}bg-info{% endif %}">
+                                        {{ duvida.get_prioridade_display }}
+                                    </span>
+                                    <span class="badge {% if duvida.estado == 'aberta' %}bg-danger{% elif duvida.estado == 'em_andamento' %}bg-warning{% elif duvida.estado == 'respondida' %}bg-success{% else %}bg-secondary{% endif %}">
+                                        {{ duvida.get_estado_display }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">{{ duvida.descricao|truncatewords:50 }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="fas fa-comments"></i> {{ duvida.respostas.count }} respostas
+                                    {% if duvida.data_resposta %}
+                                        <span class="ms-2">
+                                            <i class="fas fa-check-circle text-success"></i> Respondido por {{ duvida.respondido_por.get_full_name }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <a href="{% url 'listas_verificacao:detalhe_duvida' duvida_id=duvida.id %}" class="btn btn-primary btn-sm">
+                                    Ver detalhes
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-info">
+                    Nenhuma dúvida encontrada.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

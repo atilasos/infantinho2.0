@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Minhas Notificações{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'listas_verificacao/css/notificacoes.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Minhas Notificações</h2>
+        <a href="{% url 'listas_verificacao:configurar_notificacoes' %}" class="btn btn-outline-primary">
+            <i class="fas fa-cog"></i> Configurar Notificações
+        </a>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">Minhas Notificações</h1>
+            
+            <!-- Filtros -->
+            <div class="filtros-notificacoes mb-4">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary active" data-filtro="todas">
+                        Todas
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" data-filtro="nao-lidas">
+                        Não Lidas
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" data-filtro="lidas">
+                        Lidas
+                    </button>
+                </div>
+                
+                <div class="btn-group ms-3" role="group">
+                    <button type="button" class="btn btn-outline-secondary active" data-tipo="todos">
+                        Todos os Tipos
+                    </button>
+                    {% for tipo in tipos_notificacao %}
+                    <button type="button" class="btn btn-outline-secondary" data-tipo="{{ tipo.0 }}">
+                        {{ tipo.1 }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Lista de Notificações -->
+            <div class="lista-notificacoes">
+                {% if notificacoes %}
+                    {% for notificacao in notificacoes %}
+                        {% include "listas_verificacao/notificacoes/"|add:notificacao.tipo|add:".html" with notificacao=notificacao %}
+                    {% endfor %}
+                    
+                    <!-- Paginação -->
+                    {% if is_paginated %}
+                    <nav aria-label="Navegação de notificações" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Próxima</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                {% else %}
+                    <div class="alert alert-info">
+                        Você não tem notificações no momento.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Filtros de notificações
+    const filtros = document.querySelectorAll('.filtros-notificacoes .btn');
+    filtros.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Remove active de todos os botões do mesmo grupo
+            this.parentElement.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+            // Adiciona active ao botão clicado
+            this.classList.add('active');
+            
+            // Aplica os filtros
+            aplicarFiltros();
+        });
+    });
+    
+    // Marcar como lida
+    document.querySelectorAll('.btn-marcar-lida').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const notificacaoId = this.dataset.notificacaoId;
+            marcarComoLida(notificacaoId);
+        });
+    });
+    
+    function aplicarFiltros() {
+        const filtroEstado = document.querySelector('[data-filtro].active').dataset.filtro;
+        const filtroTipo = document.querySelector('[data-tipo].active').dataset.tipo;
+        
+        const notificacoes = document.querySelectorAll('.notificacao');
+        notificacoes.forEach(notificacao => {
+            const estado = notificacao.classList.contains('notificacao-lida') ? 'lidas' : 'nao-lidas';
+            const tipo = notificacao.dataset.tipo;
+            
+            const mostrarPorEstado = filtroEstado === 'todas' || estado === filtroEstado;
+            const mostrarPorTipo = filtroTipo === 'todos' || tipo === filtroTipo;
+            
+            notificacao.style.display = mostrarPorEstado && mostrarPorTipo ? 'block' : 'none';
+        });
+    }
+    
+    function marcarComoLida(notificacaoId) {
+        fetch(`/listas-verificacao/notificacoes/${notificacaoId}/marcar-lida/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const notificacao = document.querySelector(`[data-notificacao-id="${notificacaoId}"]`).closest('.notificacao');
+                notificacao.classList.remove('notificacao-nao-lida');
+                notificacao.classList.add('notificacao-lida');
+                notificacao.querySelector('.notificacao-acoes').remove();
+            }
+        })
+        .catch(error => console.error('Erro:', error));
+    }
+    
+    // Função auxiliar para obter o token CSRF
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %} 

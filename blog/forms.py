@@ -16,23 +16,32 @@ class PostForm(forms.ModelForm):
     """Formulário para criar e editar posts."""
     class Meta:
         model = Post
-        fields = ('title', 'content', 'category', 'tags', 'status')
+        fields = ('title', 'content', 'category', 'class_group', 'tags', 'status')
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
             'content': forms.Textarea(attrs={'class': 'form-control', 'rows': 10}),
             'category': forms.Select(attrs={'class': 'form-control'}),
+            'class_group': forms.Select(attrs={'class': 'form-control'}),
             'tags': forms.TextInput(attrs={'class': 'form-control', 'data-role': 'tagsinput'}),
             'status': forms.Select(attrs={'class': 'form-control'}),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['title'].widget.attrs.update({'class': 'form-control'})
         self.fields['category'].widget.attrs.update({'class': 'form-control'})
+        self.fields['class_group'].widget.attrs.update({'class': 'form-control'})
         self.fields['status'].widget.attrs.update({'class': 'form-control'})
         self.fields['content'].required = False
-        self.fields['category'].required = False
+        self.fields['class_group'].required = False
         self.fields['status'].initial = 'draft'
+        
+        # Filtra as turmas disponíveis para o usuário
+        if user:
+            if user.is_teacher:
+                self.fields['class_group'].queryset = Class.objects.filter(teacher=user)
+            else:
+                self.fields['class_group'].queryset = Class.objects.filter(students=user)
 
     def save(self, commit=True):
         instance = super().save(commit=False)

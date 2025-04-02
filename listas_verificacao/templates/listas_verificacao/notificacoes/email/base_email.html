@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .content {
+            background-color: #ffffff;
+            padding: 20px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+        }
+        .footer {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            font-size: 12px;
+            color: #6c757d;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .priority-high {
+            border-left: 4px solid #dc3545;
+        }
+        .priority-medium {
+            border-left: 4px solid #ffc107;
+        }
+        .priority-low {
+            border-left: 4px solid #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>{{ notificacao.titulo }}</h2>
+        <p>Data: {{ notificacao.data_criacao|date:"d/m/Y H:i" }}</p>
+    </div>
+    
+    <div class="content {% if notificacao.prioridade == 'alta' %}priority-high{% elif notificacao.prioridade == 'media' %}priority-medium{% else %}priority-low{% endif %}">
+        {% block email_content %}{% endblock %}
+    </div>
+    
+    <div class="footer">
+        <p>Este é um email automático do sistema Infantinho. Por favor, não responda a este email.</p>
+        <p>Para ver todas as suas notificações, acesse: <a href="{{ site_url }}{% url 'listas_verificacao:lista_notificacoes' %}">Minhas Notificações</a></p>
+    </div>
+</body>
+</html> 

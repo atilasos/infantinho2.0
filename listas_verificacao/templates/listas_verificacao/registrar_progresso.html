@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load listas_filters %}
+
+{% block title %}Registrar Progresso - {{ lista.titulo }} - Infantinho 2.0{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-4">Registrar Progresso</h1>
+            <p class="lead">{{ lista.titulo }}</p>
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="card">
+            <div class="card-body">
+                <div class="list-group">
+                    {% for aprendizagem in aprendizagens %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ aprendizagem.codigo }}</h6>
+                                <p class="mb-1">{{ aprendizagem.descricao }}</p>
+                            </div>
+                            <div>
+                                <select name="aprendizagem_{{ aprendizagem.id }}" class="form-select">
+                                    {% for estado_value, estado_nome in estados %}
+                                    <option value="{{ estado_value }}" {% if progressos|get_item:aprendizagem.id == estado_value %}selected{% endif %}>
+                                        {{ estado_nome }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Salvar Progresso
+                    </button>
+                    <a href="{% url 'listas_verificacao:lista_aluno' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Adicionar classes de cores aos selects baseado no estado
+    document.querySelectorAll('select').forEach(select => {
+        select.addEventListener('change', function() {
+            this.className = 'form-select';
+            if (this.value === 'concluido') {
+                this.classList.add('border-success');
+            } else if (this.value === 'em_progresso') {
+                this.classList.add('border-primary');
+            } else if (this.value === 'com_dificuldade') {
+                this.classList.add('border-warning');
+            } else {
+                this.classList.add('border-secondary');
+            }
+        });
+        
+        // Trigger o evento para aplicar as cores iniciais
+        select.dispatchEvent(new Event('change'));
+    });
+</script>
+{% endblock %} 

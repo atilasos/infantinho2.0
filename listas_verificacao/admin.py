@@ -1,10 +1,40 @@
 from django.contrib import admin
-from .models import ListaVerificacao, Objetivo, Turma, ProgressoAluno
+from .models import (
+    ListaVerificacao, Objetivo, Turma, ProgressoAluno,
+    Disciplina, Domínio, Subdomínio, AprendizagemEssencial,
+    Notificacao
+)
+
+@admin.register(Disciplina)
+class DisciplinaAdmin(admin.ModelAdmin):
+    list_display = ('codigo', 'nome')
+    search_fields = ('codigo', 'nome')
+
+@admin.register(Domínio)
+class DominioAdmin(admin.ModelAdmin):
+    list_display = ('codigo', 'nome', 'disciplina', 'ordem')
+    list_filter = ('disciplina',)
+    search_fields = ('codigo', 'nome')
+    ordering = ('disciplina', 'ordem')
+
+@admin.register(Subdomínio)
+class SubdominioAdmin(admin.ModelAdmin):
+    list_display = ('codigo', 'nome', 'dominio', 'ordem')
+    list_filter = ('dominio',)
+    search_fields = ('codigo', 'nome')
+    ordering = ('dominio', 'ordem')
+
+@admin.register(AprendizagemEssencial)
+class AprendizagemEssencialAdmin(admin.ModelAdmin):
+    list_display = ('codigo', 'descricao', 'disciplina', 'dominio', 'ano_escolar', 'ordem')
+    list_filter = ('disciplina', 'dominio', 'ano_escolar')
+    search_fields = ('codigo', 'descricao')
+    ordering = ('disciplina', 'ano_escolar', 'ordem')
 
 @admin.register(ListaVerificacao)
 class ListaVerificacaoAdmin(admin.ModelAdmin):
-    list_display = ('titulo', 'turma', 'data_criacao', 'data_atualizacao')
-    list_filter = ('turma', 'data_criacao')
+    list_display = ('titulo', 'turma', 'disciplina', 'ano_escolar', 'data_criacao', 'data_atualizacao')
+    list_filter = ('turma', 'disciplina', 'ano_escolar', 'data_criacao')
     search_fields = ('titulo', 'descricao')
     date_hierarchy = 'data_criacao'
 
@@ -29,11 +59,16 @@ class TurmaAdmin(admin.ModelAdmin):
 
 @admin.register(ProgressoAluno)
 class ProgressoAlunoAdmin(admin.ModelAdmin):
-    list_display = ('aluno', 'lista_verificacao', 'get_porcentagem_conclusao', 'data_atualizacao')
-    list_filter = ('aluno', 'lista_verificacao', 'data_atualizacao')
-    search_fields = ('aluno__username', 'aluno__first_name', 'aluno__last_name', 'lista_verificacao__titulo')
-    date_hierarchy = 'data_atualizacao'
-    
-    def get_porcentagem_conclusao(self, obj):
-        return f'{obj.porcentagem_conclusao:.1f}%'
-    get_porcentagem_conclusao.short_description = 'Progresso'
+    list_display = ('aluno', 'lista_verificacao', 'aprendizagem', 'estado', 'data_atualizacao')
+    list_filter = ('estado', 'data_atualizacao')
+    search_fields = ('aluno__username', 'aprendizagem__codigo')
+    ordering = ('-data_atualizacao',)
+
+@admin.register(Notificacao)
+class NotificacaoAdmin(admin.ModelAdmin):
+    list_display = ('tipo', 'destinatario', 'titulo', 'prioridade', 'lida', 'data_criacao')
+    list_filter = ('tipo', 'prioridade', 'lida', 'data_criacao')
+    search_fields = ('titulo', 'mensagem', 'destinatario__username', 'remetente__username')
+    date_hierarchy = 'data_criacao'
+    readonly_fields = ('data_criacao', 'data_leitura')
+    ordering = ('-data_criacao',)

@@ -1,0 +1,182 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Criar Projeto Colaborativo{% endblock %}
+
+{% block listas_content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Criar Projeto Colaborativo</h1>
+        <a href="{% url 'listas_verificacao:lista_projetos' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar para Lista
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <!-- Informações Básicas -->
+                    <div class="col-md-6">
+                        <h4 class="mb-3">Informações Básicas</h4>
+                        <div class="mb-3">
+                            <label for="titulo" class="form-label">Título</label>
+                            <input type="text" class="form-control" id="titulo" name="titulo" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="descricao" class="form-label">Descrição</label>
+                            <textarea class="form-control" id="descricao" name="descricao" rows="4" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="objetivo" class="form-label">Objetivo</label>
+                            <textarea class="form-control" id="objetivo" name="objetivo" rows="3" required></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Datas e Estado -->
+                    <div class="col-md-6">
+                        <h4 class="mb-3">Datas e Estado</h4>
+                        <div class="mb-3">
+                            <label for="data_inicio" class="form-label">Data de Início</label>
+                            <input type="date" class="form-control" id="data_inicio" name="data_inicio" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="data_fim_prevista" class="form-label">Data de Conclusão Prevista</label>
+                            <input type="date" class="form-control" id="data_fim_prevista" name="data_fim_prevista" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="estado" class="form-label">Estado</label>
+                            <select class="form-select" id="estado" name="estado">
+                                {% for valor, nome in estados %}
+                                <option value="{{ valor }}">{{ nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <!-- Participantes e Aprendizagens -->
+                    <div class="col-md-6">
+                        <h4 class="mb-3">Participantes e Aprendizagens</h4>
+                        <div class="mb-3">
+                            <label for="turma" class="form-label">Turma</label>
+                            <select class="form-select" id="turma" name="turma" required>
+                                <option value="">Selecione uma turma</option>
+                                {% for turma in turmas %}
+                                <option value="{{ turma.id }}">{{ turma.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="participantes" class="form-label">Participantes</label>
+                            <select class="form-select select2" id="participantes" name="participantes" multiple>
+                                {% for aluno in alunos %}
+                                <option value="{{ aluno.id }}">{{ aluno.get_full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="aprendizagens" class="form-label">Aprendizagens Relacionadas</label>
+                            <select class="form-select select2" id="aprendizagens" name="aprendizagens" multiple>
+                                {% for aprendizagem in aprendizagens %}
+                                <option value="{{ aprendizagem.id }}">{{ aprendizagem.codigo }} - {{ aprendizagem.descricao|truncatechars:100 }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Gestão Colaborativa -->
+                    <div class="col-md-6">
+                        <h4 class="mb-3">Gestão Colaborativa</h4>
+                        <div class="mb-3">
+                            <label for="responsabilidades" class="form-label">Distribuição de Responsabilidades</label>
+                            <textarea class="form-control" id="responsabilidades" name="responsabilidades" rows="3" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="recursos_necessarios" class="form-label">Recursos Necessários</label>
+                            <textarea class="form-control" id="recursos_necessarios" name="recursos_necessarios" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <!-- Desafios e Soluções -->
+                    <div class="col-12">
+                        <h4 class="mb-3">Desafios e Soluções</h4>
+                        <div class="mb-3">
+                            <label for="desafios" class="form-label">Desafios Previstos</label>
+                            <textarea class="form-control" id="desafios" name="desafios" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="solucoes" class="form-label">Soluções Propostas</label>
+                            <textarea class="form-control" id="solucoes" name="solucoes" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                    <button type="button" class="btn btn-outline-secondary me-md-2" onclick="window.history.back();">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Criar Projeto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Inicializa o select2 para melhor experiência de seleção
+        $('.select2').select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: 'Selecione...',
+            allowClear: true
+        });
+
+        // Atualiza a lista de participantes e aprendizagens quando a turma é alterada
+        $('#turma').on('change', function() {
+            var turmaId = $(this).val();
+            if (turmaId) {
+                $.get('{% url "listas_verificacao:get_turma_dados" turma_id=0 %}'.replace('0', turmaId), function(data) {
+                    // Atualizar participantes
+                    var participantes = $('#participantes');
+                    participantes.empty();
+                    data.alunos.forEach(function(aluno) {
+                        participantes.append(new Option(aluno.nome, aluno.id));
+                    });
+                    participantes.trigger('change');
+
+                    // Atualizar aprendizagens
+                    var aprendizagens = $('#aprendizagens');
+                    aprendizagens.empty();
+                    data.aprendizagens.forEach(function(aprendizagem) {
+                        aprendizagens.append(new Option(aprendizagem.texto, aprendizagem.id));
+                    });
+                    aprendizagens.trigger('change');
+                });
+            } else {
+                // Limpar as listas se nenhuma turma estiver selecionada
+                $('#participantes').empty().trigger('change');
+                $('#aprendizagens').empty().trigger('change');
+            }
+        });
+
+        // Configura validação de data/hora
+        var now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        $('#data_inicio').attr('min', now.toISOString().slice(0, 10));
+        $('#data_fim_prevista').attr('min', now.toISOString().slice(0, 10));
+
+        // Configura a data mínima para a data de conclusão prevista
+        $('#data_inicio').on('change', function() {
+            $('#data_fim_prevista').attr('min', $(this).val());
+        });
+    });
+</script>
+{% endblock %} 

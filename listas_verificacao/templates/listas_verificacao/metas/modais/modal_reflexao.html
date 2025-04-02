@@ -1,0 +1,55 @@
+<!-- Modal de Reflexão -->
+<div class="modal fade" id="modalReflexao" tabindex="-1" aria-labelledby="modalReflexaoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalReflexaoLabel">Adicionar Reflexão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'listas_verificacao:adicionar_reflexao' meta.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="nivel_satisfacao" class="form-label">Nível de Satisfação</label>
+                        <select class="form-select" id="nivel_satisfacao" name="nivel_satisfacao" required>
+                            <option value="">Selecione o nível de satisfação</option>
+                            <option value="muito_insatisfeito">Muito Insatisfeito</option>
+                            <option value="insatisfeito">Insatisfeito</option>
+                            <option value="neutro">Neutro</option>
+                            <option value="satisfeito">Satisfeito</option>
+                            <option value="muito_satisfeito">Muito Satisfeito</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="dificuldades" class="form-label">Dificuldades Encontradas</label>
+                        <textarea class="form-control" id="dificuldades" name="dificuldades" rows="2"></textarea>
+                        <small class="form-text text-muted">
+                            Descreva as dificuldades que você encontrou ao trabalhar nesta meta.
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="estrategias_sucesso" class="form-label">Estratégias de Sucesso</label>
+                        <textarea class="form-control" id="estrategias_sucesso" name="estrategias_sucesso" rows="2"></textarea>
+                        <small class="form-text text-muted">
+                            Quais estratégias funcionaram bem para você?
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="sugestoes_melhorias" class="form-label">Sugestões de Melhorias</label>
+                        <textarea class="form-control" id="sugestoes_melhorias" name="sugestoes_melhorias" rows="2"></textarea>
+                        <small class="form-text text-muted">
+                            O que você sugere para melhorar o processo?
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Adicionar Reflexão</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div> 

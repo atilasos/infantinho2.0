@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.db import transaction
 from django.db.models import ProtectedError
-from .models import Category, Post, Comment, UserProfile, Class, PostReaction
+from .models import Category, Post, Comment, Class, PostReaction
 from django.utils.html import mark_safe
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -17,56 +17,40 @@ ollama_service = OllamaService()
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug', 'created_at', 'updated_at')
-    search_fields = ('name', 'description')
+    list_display = ('name', 'slug', 'created_at')
     prepopulated_fields = {'slug': ('name',)}
-    date_hierarchy = 'created_at'
-    ordering = ('-created_at',)
-
-@admin.register(Post)
-class PostAdmin(admin.ModelAdmin):
-    list_display = ('title', 'author', 'status', 'created_at', 'published_at')
-    list_filter = ('status', 'created_at', 'published_at', 'author')
-    search_fields = ('title', 'content')
-    prepopulated_fields = {'slug': ('title',)}
-    raw_id_fields = ('author',)
-    date_hierarchy = 'published_at'
-    ordering = ('-created_at',)
-
-@admin.register(Comment)
-class CommentAdmin(admin.ModelAdmin):
-    list_display = ('author', 'post', 'created_at', 'active')
-    list_filter = ('active', 'created_at', 'updated_at')
-    search_fields = ('content', 'author__username', 'post__title')
-    raw_id_fields = ('author', 'post')
-    date_hierarchy = 'created_at'
-    ordering = ('-created_at',)
-
-@admin.register(UserProfile)
-class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'user_type', 'created_at')
-    list_filter = ('user_type', 'created_at')
-    search_fields = ('user__username', 'bio')
-    raw_id_fields = ('user',)
-    date_hierarchy = 'created_at'
-    ordering = ('-created_at',)
+    search_fields = ('name', 'description')
 
 @admin.register(Class)
 class ClassAdmin(admin.ModelAdmin):
     list_display = ('name', 'teacher', 'created_at')
-    list_filter = ('created_at',)
-    search_fields = ('name', 'teacher__username')
-    raw_id_fields = ('teacher',)
+    prepopulated_fields = {'slug': ('name',)}
+    search_fields = ('name', 'description')
     filter_horizontal = ('students',)
+
+@admin.register(Post)
+class PostAdmin(admin.ModelAdmin):
+    list_display = ('title', 'author', 'category', 'class_group', 'status', 'created_at', 'published_at')
+    list_filter = ('status', 'category', 'class_group', 'created_at', 'published_at')
+    search_fields = ('title', 'content', 'author__username', 'author__first_name', 'author__last_name')
+    prepopulated_fields = {'slug': ('title',)}
+    date_hierarchy = 'created_at'
+    ordering = ('-created_at',)
+    filter_horizontal = ('likes',)
+
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ('post', 'author', 'status', 'created_at', 'moderated_at')
+    list_filter = ('status', 'created_at', 'moderated_at')
+    search_fields = ('content', 'author__username', 'post__title')
     date_hierarchy = 'created_at'
     ordering = ('-created_at',)
 
 @admin.register(PostReaction)
 class PostReactionAdmin(admin.ModelAdmin):
-    list_display = ('user', 'post', 'reaction', 'created_at')
+    list_display = ('post', 'user', 'reaction', 'created_at')
     list_filter = ('reaction', 'created_at')
-    search_fields = ('user__username', 'post__title')
-    raw_id_fields = ('user', 'post')
+    search_fields = ('post__title', 'user__username')
     date_hierarchy = 'created_at'
     ordering = ('-created_at',)
 
@@ -81,7 +65,6 @@ class CustomUserAdmin(BaseUserAdmin):
                 obj.turmas_aluno.clear()
                 
                 # Delete related profiles using filter
-                UserProfile.objects.filter(user=obj).delete()
                 MicrosoftProfile.objects.filter(user=obj).delete()
                 
                 # Delete the user last

@@ -1,11 +1,11 @@
-# Infantinho 2.0 Portal
+# Portal Infantinho 2.0
 
 Portal educativo baseado em Django com funcionalidades de IA para aprendizagem cooperativa.
 
 ## Requisitos
 
 - Python 3.8 ou superior
-- uv (gerenciador de pacotes Python mais rápido)
+- uv (gestor de pacotes Python mais rápido)
 - Git
 - Ollama (para funcionalidades de IA)
 
@@ -36,7 +36,7 @@ uv pip install -r requirements.txt
 5. Configure as variáveis de ambiente:
 ```bash
 cp .env.example .env
-# Edite o arquivo .env com suas configurações
+# Edite o ficheiro .env com as suas configurações
 ```
 
 6. Execute as migrações:
@@ -44,7 +44,7 @@ cp .env.example .env
 python manage.py migrate
 ```
 
-7. Crie um superusuário:
+7. Crie um superutilizador:
 ```bash
 python manage.py createsuperuser
 ```
@@ -58,12 +58,12 @@ python manage.py runserver
 
 1. Instale o Ollama seguindo as instruções em: https://ollama.ai/download
 
-2. Baixe o modelo necessário:
+2. Transfira o modelo necessário:
 ```bash
 ollama pull gemma3
 ```
 
-3. Certifique-se que o servidor Ollama está rodando:
+3. Certifique-se que o servidor Ollama está em execução:
 ```bash
 ollama serve
 ```
@@ -85,40 +85,40 @@ infantinho2.0/
 
 - Sistema de autenticação e autorização com suporte a Microsoft OAuth2
 - Blog com suporte a Markdown e geração de conteúdo com IA
-- Sistema de categorias e tags com sugestão automática
-- Comentários e reações em posts
+- Sistema de categorias e etiquetas com sugestão automática
+- Comentários e reações em publicações
 - Moderação de conteúdo com análise de IA
 - Interface responsiva e moderna
 - Sistema de listas de verificação para acompanhamento pedagógico
 - Gestão de turmas e alunos
-- Dashboards personalizados para professores
+- Painéis de controlo personalizados para professores
 - Geração automática de relatórios de progresso
 
 ## Desenvolvimento
 
 Para contribuir com o projeto:
 
-1. Crie uma branch para sua feature:
+1. Crie uma ramo para a sua funcionalidade:
 ```bash
-git checkout -b feature/nome-da-feature
+git checkout -b feature/nome-da-funcionalidade
 ```
 
-2. Faça suas alterações e commit:
+2. Faça as suas alterações e commit:
 ```bash
 git add .
 git commit -m "Descrição das alterações"
 ```
 
-3. Push para o GitHub:
+3. Envie para o GitHub:
 ```bash
-git push origin feature/nome-da-feature
+git push origin feature/nome-da-funcionalidade
 ```
 
-4. Crie um Pull Request no GitHub
+4. Crie um Pedido de Pull no GitHub
 
 ## Licença
 
-Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
+Este projeto está licenciado sob a licença MIT - veja o ficheiro [LICENSE](LICENSE) para detalhes.
 
 ## Philosophy
 

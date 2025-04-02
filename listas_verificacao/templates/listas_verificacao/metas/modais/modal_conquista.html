@@ -1,0 +1,124 @@
+<!-- Modal de Conquista -->
+<div class="modal fade" id="modalConquista" tabindex="-1" aria-labelledby="modalConquistaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalConquistaLabel">Registrar Conquista Colaborativa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'listas_verificacao:registrar_conquista' meta.id %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="tipo_conquista" class="form-label">Tipo de Conquista</label>
+                        <select class="form-select" id="tipo_conquista" name="tipo" required>
+                            <option value="">Selecione o tipo de conquista</option>
+                            <option value="tutoria">Tutoria e Interajuda</option>
+                            <option value="partilha">Partilha de Recursos</option>
+                            <option value="cooperacao">Trabalho Cooperativo</option>
+                            <option value="comunicacao">Comunicação e Discussão</option>
+                            <option value="gestao">Gestão Partilhada</option>
+                            <option value="social">Responsabilidade Social</option>
+                            <option value="inovacao">Inovação Colaborativa</option>
+                            <option value="mediacao">Mediação e Resolução</option>
+                        </select>
+                        <small class="form-text text-muted">
+                            Escolha o tipo que melhor representa a natureza cooperativa desta conquista.
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="titulo_conquista" class="form-label">Título da Conquista</label>
+                        <input type="text" class="form-control" id="titulo_conquista" name="titulo" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="descricao_conquista" class="form-label">Descrição</label>
+                        <textarea class="form-control" id="descricao_conquista" name="descricao" rows="3" required></textarea>
+                        <small class="form-text text-muted">
+                            Descreva o processo colaborativo e os resultados alcançados.
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="participantes" class="form-label">Participantes</label>
+                        <select class="form-select" id="participantes" name="participantes" multiple required>
+                            {% for aluno in meta.turma.alunos.all %}
+                                <option value="{{ aluno.id }}">{{ aluno.get_full_name }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-text text-muted">
+                            Selecione todos que contribuíram para esta conquista.
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="contribuicoes" class="form-label">Contribuições</label>
+                        <textarea class="form-control" id="contribuicoes" name="contribuicoes" rows="3" required></textarea>
+                        <small class="form-text text-muted">
+                            Descreva como cada participante contribuiu para a conquista.
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="impacto" class="form-label">Nível de Impacto</label>
+                        <select class="form-select" id="impacto" name="impacto" required>
+                            <option value="">Selecione o nível de impacto</option>
+                            <option value="individual">Individual</option>
+                            <option value="grupo">Grupo de Trabalho</option>
+                            <option value="turma">Turma</option>
+                            <option value="escola">Escola</option>
+                            <option value="comunidade">Comunidade</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="beneficiarios" class="form-label">Beneficiários</label>
+                        <textarea class="form-control" id="beneficiarios" name="beneficiarios" rows="2" required></textarea>
+                        <small class="form-text text-muted">
+                            Quem se beneficiou ou foi impactado por esta conquista?
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="reflexao_impacto" class="form-label">Reflexão sobre o Impacto</label>
+                        <textarea class="form-control" id="reflexao_impacto" name="reflexao_impacto" rows="3" required></textarea>
+                        <small class="form-text text-muted">
+                            Reflita sobre o impacto desta conquista na comunidade e seu valor para a aprendizagem coletiva.
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="proximos_passos" class="form-label">Próximos Passos</label>
+                        <textarea class="form-control" id="proximos_passos" name="proximos_passos" rows="2"></textarea>
+                        <small class="form-text text-muted">
+                            Como esta conquista pode evoluir ou inspirar novas iniciativas?
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="evidencias" class="form-label">Evidências</label>
+                        <input type="file" class="form-control" id="evidencias" name="evidencias" multiple>
+                        <small class="form-text text-muted">
+                            Adicione arquivos que documentem o processo colaborativo e os resultados.
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="links_relacionados" class="form-label">Links Relacionados</label>
+                        <textarea class="form-control" id="links_relacionados" name="links_relacionados" rows="2"></textarea>
+                        <small class="form-text text-muted">
+                            Links para trabalhos, recursos ou projetos relacionados.
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-users"></i> Registrar Conquista Colaborativa
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div> 

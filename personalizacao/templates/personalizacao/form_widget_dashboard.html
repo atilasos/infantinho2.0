@@ -1,0 +1,228 @@
+{% extends "personalizacao/base_personalizacao.html" %}
+
+{% block personalizacao_content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">{% if widget_dashboard %}Editar{% else %}Adicionar{% endif %} Widget</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" class="needs-validation" novalidate>
+            {% csrf_token %}
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="{{ form.widget.id_for_label }}" class="form-label">Widget</label>
+                    {{ form.widget }}
+                    {% if form.widget.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.widget.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <label for="{{ form.posicao_x.id_for_label }}" class="form-label">Posição X</label>
+                    {{ form.posicao_x }}
+                    {% if form.posicao_x.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.posicao_x.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-3">
+                    <label for="{{ form.posicao_y.id_for_label }}" class="form-label">Posição Y</label>
+                    {{ form.posicao_y }}
+                    {% if form.posicao_y.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.posicao_y.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-3">
+                    <label for="{{ form.largura.id_for_label }}" class="form-label">Largura</label>
+                    {{ form.largura }}
+                    {% if form.largura.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.largura.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-3">
+                    <label for="{{ form.altura.id_for_label }}" class="form-label">Altura</label>
+                    {{ form.altura }}
+                    {% if form.altura.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.altura.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="{{ form.configuracao.id_for_label }}" class="form-label">Configurações</label>
+                {{ form.configuracao }}
+                {% if form.configuracao.errors %}
+                <div class="invalid-feedback d-block">
+                    {{ form.configuracao.errors }}
+                </div>
+                {% endif %}
+                <small class="form-text text-muted">
+                    Configure as opções específicas do widget em formato JSON.
+                </small>
+            </div>
+
+            <div class="mb-3">
+                <div class="form-check form-switch">
+                    {{ form.ativo }}
+                    <label class="form-check-label" for="{{ form.ativo.id_for_label }}">Ativo</label>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'personalizacao:dashboard_usuario' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Voltar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>Salvar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Preview do Widget</h5>
+    </div>
+    <div class="card-body">
+        <div class="widget-preview" id="widgetPreview">
+            <!-- O preview será atualizado dinamicamente via JavaScript -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const widgetSelect = document.querySelector('#{{ form.widget.id_for_label }}');
+    const configTextarea = document.querySelector('#{{ form.configuracao.id_for_label }}');
+    const preview = document.getElementById('widgetPreview');
+    
+    // Atualizar preview quando o widget ou configurações mudarem
+    function updatePreview() {
+        const widgetId = widgetSelect.value;
+        const config = configTextarea.value;
+        
+        // Limpar preview atual
+        preview.innerHTML = '';
+        
+        if (widgetId) {
+            // Carregar dados do widget selecionado
+            fetch(`/api/widgets/${widgetId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    // Criar preview baseado no tipo do widget
+                    let previewContent = '';
+                    
+                    switch (data.tipo) {
+                        case 'calendario':
+                            previewContent = createCalendarPreview(data, config);
+                            break;
+                        case 'notas':
+                            previewContent = createNotesPreview(data, config);
+                            break;
+                        case 'tarefas':
+                            previewContent = createTasksPreview(data, config);
+                            break;
+                        case 'estatisticas':
+                            previewContent = createStatsPreview(data, config);
+                            break;
+                        case 'graficos':
+                            previewContent = createChartsPreview(data, config);
+                            break;
+                    }
+                    
+                    preview.innerHTML = previewContent;
+                });
+        }
+    }
+    
+    // Funções auxiliares para criar previews
+    function createCalendarPreview(widget, config) {
+        return `
+            <div class="calendar-preview">
+                <div class="calendar-header">
+                    <h6>${widget.nome}</h6>
+                </div>
+                <div class="calendar-body">
+                    <!-- Exemplo de calendário -->
+                </div>
+            </div>
+        `;
+    }
+    
+    function createNotesPreview(widget, config) {
+        return `
+            <div class="notes-preview">
+                <div class="notes-header">
+                    <h6>${widget.nome}</h6>
+                </div>
+                <div class="notes-body">
+                    <!-- Exemplo de notas -->
+                </div>
+            </div>
+        `;
+    }
+    
+    function createTasksPreview(widget, config) {
+        return `
+            <div class="tasks-preview">
+                <div class="tasks-header">
+                    <h6>${widget.nome}</h6>
+                </div>
+                <div class="tasks-body">
+                    <!-- Exemplo de tarefas -->
+                </div>
+            </div>
+        `;
+    }
+    
+    function createStatsPreview(widget, config) {
+        return `
+            <div class="stats-preview">
+                <div class="stats-header">
+                    <h6>${widget.nome}</h6>
+                </div>
+                <div class="stats-body">
+                    <!-- Exemplo de estatísticas -->
+                </div>
+            </div>
+        `;
+    }
+    
+    function createChartsPreview(widget, config) {
+        return `
+            <div class="charts-preview">
+                <div class="charts-header">
+                    <h6>${widget.nome}</h6>
+                </div>
+                <div class="charts-body">
+                    <!-- Exemplo de gráficos -->
+                </div>
+            </div>
+        `;
+    }
+    
+    // Adicionar listeners para atualização do preview
+    widgetSelect.addEventListener('change', updatePreview);
+    configTextarea.addEventListener('input', updatePreview);
+    
+    // Atualizar preview inicial
+    updatePreview();
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,53 @@
+<!-- Modal de Conclusão de Meta -->
+<div class="modal fade" id="modalConcluirMeta" tabindex="-1" aria-labelledby="modalConcluirMetaLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalConcluirMetaLabel">Concluir Meta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'listas_verificacao:concluir_meta' meta.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p>Você está prestes a marcar a meta "{{ meta.titulo }}" como concluída.</p>
+                    
+                    <div class="mb-3">
+                        <label for="nivel_conclusao" class="form-label">Nível de Conclusão</label>
+                        <select class="form-select" id="nivel_conclusao" name="nivel_conclusao" required>
+                            <option value="">Selecione o nível de conclusão</option>
+                            <option value="parcial">Parcial</option>
+                            <option value="total">Total</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="observacoes_conclusao" class="form-label">Observações</label>
+                        <textarea class="form-control" id="observacoes_conclusao" name="observacoes" rows="3" required></textarea>
+                        <small class="form-text text-muted">
+                            Descreva como a meta foi concluída e quais foram os principais resultados alcançados.
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="aprendizados" class="form-label">Aprendizados</label>
+                        <textarea class="form-control" id="aprendizados" name="aprendizados" rows="2"></textarea>
+                        <small class="form-text text-muted">
+                            Quais foram os principais aprendizados durante o desenvolvimento desta meta?
+                        </small>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        Ao concluir esta meta, ela será marcada como "Concluída" e você poderá registrar conquistas relacionadas a ela.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-flag-checkered"></i> Concluir Meta
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div> 

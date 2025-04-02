@@ -1,0 +1,55 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+
+{% block title %}Avaliar Aprendizagem - {{ progresso.aprendizagem.codigo }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h2>Avaliar Aprendizagem</h2>
+            <h4>{{ progresso.aprendizagem.codigo }} - {{ progresso.aprendizagem.descricao }}</h4>
+        </div>
+        <div class="card-body">
+            <div class="mb-4">
+                <h5>Aluno: {{ progresso.aluno.get_full_name }}</h5>
+                <p>Estado atual: {{ avaliacao.get_estado_display }}</p>
+                {% if avaliacao.data_solicitacao_avaliacao %}
+                    <p>Solicitado em: {{ avaliacao.data_solicitacao_avaliacao|date:"d/m/Y H:i" }}</p>
+                {% endif %}
+                {% if avaliacao.data_avaliacao %}
+                    <p>Avaliado em: {{ avaliacao.data_avaliacao|date:"d/m/Y H:i" }}</p>
+                    <p>Avaliador: {{ avaliacao.avaliador.get_full_name }}</p>
+                {% endif %}
+            </div>
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="estado">Estado da Avaliação:</label>
+                    <select name="estado" id="estado" class="form-control" required>
+                        {% for estado in estados %}
+                            <option value="{{ estado.0 }}" {% if avaliacao.estado == estado.0 %}selected{% endif %}>
+                                {{ estado.1 }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                {% if user.is_teacher %}
+                <div class="form-group mt-3">
+                    <label for="observacoes">Observações:</label>
+                    <textarea name="observacoes" id="observacoes" class="form-control" rows="4">{{ avaliacao.observacoes_avaliador }}</textarea>
+                </div>
+                {% endif %}
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">Salvar Avaliação</button>
+                    <a href="{% url 'listas_verificacao:detalhe_aprendizagem' progresso_id=progresso.id %}" class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

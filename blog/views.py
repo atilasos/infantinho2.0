@@ -1,19 +1,28 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
 from django.contrib import messages
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Q, Count, Sum
 from django.http import JsonResponse, HttpResponseRedirect
 from django.views.decorators.http import require_POST
 from django.utils import timezone
-from .models import Post, Category, Comment, PostReaction, UserProfile, Class
+from django.contrib.auth import get_user_model
+from .models import Post, Category, Comment, PostReaction, Class
 from .forms import CommentForm, PostForm
 from ai_core.agents import blog_agent
 from django.utils.text import slugify
 import logging
-from taggit.models import Tag
+from taggit.models import Tag, TaggedItem
+from django.contrib.contenttypes.models import ContentType
 import markdown
+from django.urls import reverse
+from django.contrib.auth.models import Group
+from urllib.parse import unquote
+from django.views.decorators.http import require_POST
+from django.utils.decorators import method_decorator
+from django.views import View
+
+User = get_user_model()
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +47,8 @@ def post_list(request):
     # Tag filter
     tag_slug = request.GET.get('tag')
     if tag_slug:
+        # Convert the slug to a format that matches taggit's slug format
+        tag_slug = tag_slug.replace('-', '_')
         posts = posts.filter(tags__slug=tag_slug)
     
     # Pagination
@@ -67,7 +78,7 @@ def post_list(request):
         'tag_slug': tag_slug,
         'featured_authors': featured_authors,
     }
-    return render(request, 'blog/post/post_list.html', context)
+    return render(request, 'blog/post_list.html', context)
 
 def post_detail(request, slug):
     """Display a single blog post with its comments."""
@@ -83,7 +94,7 @@ def post_detail(request, slug):
     post.save()
     
     # Get active comments
-    comments = post.comments.filter(active=True)
+    comments = post.comments.filter(status='approved')
     
     # Handle comment submission
     if request.method == 'POST':
@@ -92,8 +103,9 @@ def post_detail(request, slug):
             comment = comment_form.save(commit=False)
             comment.post = post
             comment.author = request.user
+            comment.status = 'pending'  # Comentários começam como pendentes
             comment.save()
-            messages.success(request, 'Your comment has been submitted for review.')
+            messages.success(request, 'O teu comentário foi submetido para revisão.')
             return redirect('blog:post_detail', slug=slug)
     else:
         comment_form = CommentForm()
@@ -153,128 +165,188 @@ def category_list(request):
     return render(request, 'blog/category_list.html', context)
 
 def tag_list(request):
-    """Display all tags."""
-    tags = Tag.objects.annotate(
-        posts_count=Count('taggit_taggeditem_items'),
-        total_views=Sum('taggit_taggeditem_items__content_object__views')
-    ).order_by('-posts_count')
-    
+    """Display all tags used in blog posts."""
+
+    # Obtém o ContentType para o modelo Post
+    try:
+        post_content_type = ContentType.objects.get_for_model(Post)
+    except ContentType.DoesNotExist:
+        post_content_type = None
+        logger.warning("ContentType for Post model not found.")
+
+    tags = Tag.objects.none() # Start with an empty queryset
+    if post_content_type:
+        # Obtém os IDs das tags que estão associadas a pelo menos um Post
+        used_tag_ids = TaggedItem.objects.filter(
+            content_type=post_content_type
+        ).values_list('tag_id', flat=True).distinct()
+
+        # Filtra as Tags para incluir apenas as usadas em Posts
+        tags = Tag.objects.filter(id__in=used_tag_ids).annotate(
+            # Conta quantas vezes cada tag é usada em Posts
+            posts_count=Count('taggit_taggeditem_items', filter=Q(taggit_taggeditem_items__content_type=post_content_type))
+        ).order_by('-posts_count')
+
     # Estatísticas totais
-    total_posts = Post.objects.count()
-    total_views = Post.objects.aggregate(Sum('views'))['views__sum'] or 0
-    
+    total_posts = Post.objects.filter(status='published').count()
+    # total_views = Post.objects.filter(status='published').aggregate(Sum('views'))['views__sum'] or 0
+
     # Tags populares (top 5)
     popular_tags = tags[:5]
-    
+
     context = {
         'tags': tags,
         'total_posts': total_posts,
-        'total_views': total_views,
+        # 'total_views': total_views, # Omitindo por enquanto
         'popular_tags': popular_tags,
     }
-    
+
     return render(request, 'blog/tag_list.html', context)
 
 @login_required
 def post_create(request):
     """View para criar um novo post."""
+    if not request.user.is_teacher:
+        messages.error(request, 'Você não tem permissão para criar posts.')
+        return redirect('blog:post_list')
+    
     if request.method == 'POST':
-        form = PostForm(request.POST, request.FILES)
+        form = PostForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
-            post = form.save(commit=False)
-            post.author = request.user
-            post.status = 'draft'
-            
-            # Se não houver categoria selecionada, tenta sugerir uma
-            if not post.category_id:  # Usando category_id em vez de category
-                try:
-                    suggested_category = form.suggest_category()
-                    if suggested_category:
-                        # Cria ou obtém a categoria sugerida
-                        category, created = Category.objects.get_or_create(
-                            name=suggested_category,
-                            defaults={'slug': slugify(suggested_category)}
-                        )
-                        post.category = category
-                        if created:
-                            messages.info(request, f'Categoria "{suggested_category}" foi criada automaticamente.')
-                        else:
-                            messages.info(request, f'Categoria "{suggested_category}" foi selecionada automaticamente.')
-                    else:
-                        # Se não conseguir sugerir uma categoria, cria uma temporária
-                        temp_category, created = Category.objects.get_or_create(
-                            name='Temporária',
-                            defaults={'slug': 'temporaria'}
-                        )
-                        post.category = temp_category
-                        if created:
-                            messages.warning(request, 'Uma categoria temporária foi criada.')
-                        else:
-                            messages.warning(request, 'Uma categoria temporária foi selecionada.')
-                except Exception as e:
-                    # Cria uma categoria temporária em caso de erro
-                    temp_category, _ = Category.objects.get_or_create(
-                        name='Temporária',
-                        defaults={'slug': 'temporaria'}
+            try:
+                post = form.save(commit=False)
+                post.author = request.user
+                post.status = 'draft'
+                
+                # Gera o slug a partir do título
+                post.slug = slugify(post.title, allow_unicode=True)
+                
+                # Se não houver turma selecionada, usa a turma "Geral"
+                if not post.class_group:
+                    geral_class, created = Class.objects.get_or_create(
+                        name='Geral',
+                        defaults={
+                            'slug': 'geral',
+                            'description': 'Turma para posts gerais',
+                            'teacher': request.user
+                        }
                     )
-                    post.category = temp_category
-                    messages.error(request, 'Ocorreu um erro ao sugerir categoria. Uma categoria temporária foi selecionada.')
-            
-            # Gera resumo automaticamente
-            try:
-                excerpt = blog_agent.generate_excerpt(post.content)
-                if excerpt:
-                    post.excerpt = excerpt
-                else:
+                    post.class_group = geral_class
+                    if created:
+                        messages.info(request, 'Uma turma "Geral" foi criada para posts sem turma específica.')
+                
+                # Gera sugestões de IA
+                suggestions = None
+                try:
+                    suggestions = blog_agent.suggest_categories_and_tags(post.content)
+                except Exception as e:
+                    logger.error(f"Erro ao gerar sugestões: {str(e)}")
+                
+                # Se não houver categoria selecionada e houver sugestões, tenta usar a sugerida
+                if not post.category_id and suggestions and suggestions.get('category'):
+                    try:
+                        suggested_category = suggestions['category']
+                        
+                        # Procura por categorias existentes similares
+                        existing_categories = Category.objects.all()
+                        best_match = None
+                        highest_similarity = 0
+                        
+                        for category in existing_categories:
+                            similarity = blog_agent.calculate_similarity(suggested_category, category.name)
+                            if similarity > highest_similarity and similarity > 0.7:  # 70% de similaridade mínima
+                                highest_similarity = similarity
+                                best_match = category
+                        
+                        if best_match:
+                            post.category = best_match
+                            messages.info(request, f'Categoria "{best_match.name}" foi selecionada automaticamente.')
+                        else:
+                            # Se não encontrou similaridade suficiente, cria nova categoria
+                            category, created = Category.objects.get_or_create(
+                                name=suggested_category,
+                                defaults={'slug': slugify(suggested_category, allow_unicode=True)}
+                            )
+                            post.category = category
+                            if created:
+                                messages.info(request, f'Categoria "{suggested_category}" foi criada automaticamente.')
+                            else:
+                                messages.info(request, f'Categoria "{suggested_category}" foi selecionada automaticamente.')
+                    except Exception as e:
+                        messages.warning(request, 'Não foi possível criar ou selecionar a categoria sugerida.')
+                        return render(request, 'blog/post_form.html', {'form': form})
+                
+                # Gera resumo automaticamente
+                try:
+                    excerpt = blog_agent.generate_excerpt(post.content)
+                    if excerpt:
+                        post.excerpt = excerpt
+                    else:
+                        post.excerpt = post.content[:200] + "..."
+                except Exception as e:
                     post.excerpt = post.content[:200] + "..."
-            except Exception as e:
-                post.excerpt = post.content[:200] + "..."
-            
-            # Gera o slug a partir do título
-            post.slug = slugify(post.title)
-            
-            # Verifica se já existe um post com o mesmo slug
-            base_slug = post.slug
-            counter = 1
-            while Post.objects.filter(slug=post.slug).exists():
-                post.slug = f"{base_slug}-{counter}"
-                counter += 1
-            
-            try:
+                
+                # Salva o post primeiro
                 post.save()
                 
-                # Processa as tags do formulário
-                tags = form.cleaned_data.get('tags', [])
-                if tags:
-                    # Se as tags vierem como string, converte para lista
-                    if isinstance(tags, str):
-                        tags = [tag.strip() for tag in tags.split(',') if tag.strip()]
-                    
-                    # Adiciona cada tag ao post
-                    for tag_name in tags:
-                        tag, _ = Tag.objects.get_or_create(
-                            name=tag_name,
-                            defaults={'slug': slugify(tag_name)}
-                        )
-                        post.tags.add(tag)
+                # Adiciona as tags selecionadas do formulário
+                try:
+                    selected_tags = form.cleaned_data.get('tags', [])
+                    if selected_tags:
+                        # Adiciona as tags selecionadas
+                        for tag_name in selected_tags:
+                            tag_name = tag_name.strip()
+                            if tag_name:
+                                post.tags.add(tag_name)
+                    else:
+                        # Se não houver tags selecionadas e houver sugestões, usa as sugeridas
+                        if suggestions and suggestions.get('tags'):
+                            existing_tags = Tag.objects.all()
+                            for suggested_tag in suggestions['tags']:
+                                # Normaliza o nome da tag
+                                suggested_tag = suggested_tag.strip().lower()
+                                
+                                # Procura por tags existentes similares
+                                best_match = None
+                                highest_similarity = 0
+                                
+                                for tag in existing_tags:
+                                    similarity = blog_agent.calculate_similarity(suggested_tag, tag.name)
+                                    if similarity > highest_similarity and similarity > 0.7:  # 70% de similaridade mínima
+                                        highest_similarity = similarity
+                                        best_match = tag
+                                
+                                if best_match:
+                                    post.tags.add(best_match)
+                                else:
+                                    # Se não encontrou similaridade suficiente, adiciona nova tag
+                                    # Usa slugify para garantir um formato consistente
+                                    tag_slug = slugify(suggested_tag, allow_unicode=True)
+                                    post.tags.add(suggested_tag, slug=tag_slug)
+                except Exception as e:
+                    messages.warning(request, 'Não foi possível adicionar as tags.')
                 
-                messages.success(request, 'Post criado com sucesso!')
+                messages.success(request, 'Post criado com sucesso! Aguarde a aprovação de um professor.')
                 return redirect('blog:post_detail', slug=post.slug)
+                
             except Exception as e:
-                messages.error(request, f'Erro ao salvar o post: {str(e)}')
+                messages.error(request, f'Erro ao criar o post: {str(e)}')
                 return render(request, 'blog/post_form.html', {'form': form})
     else:
-        form = PostForm()
+        form = PostForm(user=request.user)
     
     return render(request, 'blog/post_form.html', {'form': form})
 
 @login_required
 def post_edit(request, slug):
-    """View para editar um post existente."""
-    post = get_object_or_404(Post, slug=slug, author=request.user)
+    """View para editar um post."""
+    post = get_object_or_404(Post, slug=slug)
+    if not request.user.is_teacher and request.user != post.author:
+        messages.error(request, 'Você não tem permissão para editar este post.')
+        return redirect('blog:post_list')
     
     if request.method == 'POST':
-        form = PostForm(request.POST, request.FILES, instance=post)
+        form = PostForm(request.POST, request.FILES, instance=post, user=request.user)
         if form.is_valid():
             post = form.save(commit=False)
             post.slug = slugify(post.title)
@@ -283,7 +355,7 @@ def post_edit(request, slug):
             messages.success(request, 'Post atualizado com sucesso!')
             return redirect('blog:post_detail', slug=post.slug)
     else:
-        form = PostForm(instance=post)
+        form = PostForm(instance=post, user=request.user)
     
     # Busca todas as categorias e tags para o formulário
     categories = Category.objects.all()
@@ -352,12 +424,42 @@ def my_posts(request):
 
 @login_required
 def pending_posts(request):
-    if request.user.profile.user_type not in ['admin', 'teacher']:
-        messages.error(request, 'Não tens permissão para ver posts pendentes.')
+    """View para listar posts pendentes."""
+    if not request.user.is_teacher:
+        messages.error(request, 'Você não tem permissão para acessar esta página.')
         return redirect('blog:post_list')
     
-    posts = Post.objects.filter(status='pending')
-    return render(request, 'blog/pending_posts.html', {'posts': posts})
+    # Busca posts pendentes ordenados por data de criação
+    pending_posts = Post.objects.filter(status='draft').order_by('-created_at')
+    
+    if request.method == 'POST':
+        post_id = request.POST.get('post_id')
+        action = request.POST.get('action')
+        
+        if post_id and action:
+            post = get_object_or_404(Post, id=post_id)
+            
+            if action == 'approve':
+                post.status = 'published'
+                post.published_at = timezone.now()
+                post.save()
+                messages.success(request, f'Post "{post.title}" foi aprovado e publicado.')
+                
+                # Notifica o autor
+                messages.success(request, f'O autor {post.author.get_full_name()} será notificado.')
+                
+            elif action == 'reject':
+                post.status = 'rejected'
+                post.save()
+                messages.warning(request, f'Post "{post.title}" foi rejeitado.')
+                
+                # Notifica o autor
+                messages.warning(request, f'O autor {post.author.get_full_name()} será notificado.')
+    
+    context = {
+        'pending_posts': pending_posts,
+    }
+    return render(request, 'blog/pending_posts.html', context)
 
 @login_required
 @require_POST
@@ -470,7 +572,16 @@ def search(request):
 
 def category_detail(request, slug):
     """Display posts filtered by category."""
-    category = get_object_or_404(Category, slug=slug)
+    # Decode the URL-encoded slug and normalize it
+    decoded_slug = slugify(unquote(slug), allow_unicode=True)
+    
+    try:
+        # Try to find the category by normalized slug
+        category = Category.objects.get(slug=decoded_slug)
+    except Category.DoesNotExist:
+        # If not found, try to find by name
+        category = get_object_or_404(Category, name__iexact=decoded_slug)
+    
     posts = Post.objects.filter(category=category, status='published').order_by('-created_at')
     
     # Estatísticas
@@ -499,7 +610,16 @@ def category_detail(request, slug):
 
 def tag_detail(request, slug):
     """Display posts filtered by tag."""
-    tag = get_object_or_404(Tag, slug=slug)
+    # Decode the URL-encoded slug and normalize it
+    decoded_slug = slugify(unquote(slug), allow_unicode=True)
+    
+    try:
+        # Try to find the tag by normalized slug
+        tag = Tag.objects.get(slug=decoded_slug)
+    except Tag.DoesNotExist:
+        # If not found, try to find by name
+        tag = get_object_or_404(Tag, name__iexact=decoded_slug)
+    
     posts = Post.objects.filter(tags=tag, status='published').order_by('-created_at')
     
     # Estatísticas
@@ -536,7 +656,7 @@ def author_posts(request, username):
     # Estatísticas do autor
     total_posts = posts.count()
     total_views = posts.aggregate(Sum('views'))['views__sum'] or 0
-    total_likes = posts.aggregate(Sum('likes_count'))['likes_count__sum'] or 0
+    total_likes = sum(post.likes.count() for post in posts)
     
     # Categorias mais usadas pelo autor
     author_categories = Category.objects.filter(posts__author=author).annotate(
@@ -544,7 +664,10 @@ def author_posts(request, username):
     ).order_by('-posts_count')[:5]
     
     # Tags mais usadas pelo autor
-    author_tags = Tag.objects.filter(taggit_taggeditem_items__content_object__author=author).annotate(
+    author_tags = Tag.objects.filter(
+        taggit_taggeditem_items__content_type__model='post',
+        taggit_taggeditem_items__object_id__in=posts.values_list('id', flat=True)
+    ).annotate(
         posts_count=Count('taggit_taggeditem_items')
     ).order_by('-posts_count')[:10]
     
@@ -581,28 +704,136 @@ def suggest_categories_and_tags(request):
 
 @login_required
 def profile(request):
-    """View para exibir e editar o perfil do usuário."""
+    user_posts = Post.objects.filter(author=request.user).order_by('-created_at')
+    user_comments = Comment.objects.filter(author=request.user).order_by('-created_at')
+    context = {
+        'user_posts': user_posts,
+        'user_comments': user_comments,
+    }
+    return render(request, 'blog/profile.html', context)
+
+@login_required
+def profile_edit(request):
     if request.method == 'POST':
-        # Atualizar perfil
         user = request.user
         user.first_name = request.POST.get('first_name')
         user.last_name = request.POST.get('last_name')
         user.email = request.POST.get('email')
-        user.save()
+        user.bio = request.POST.get('bio')
         
-        # Atualizar UserProfile
-        profile = user.profile
-        profile.bio = request.POST.get('bio')
         if 'avatar' in request.FILES:
-            profile.avatar = request.FILES['avatar']
-        profile.save()
+            user.avatar = request.FILES['avatar']
         
+        user.save()
         messages.success(request, 'Perfil atualizado com sucesso!')
         return redirect('blog:profile')
     
+    return render(request, 'blog/profile_edit.html')
+
+@login_required
+def approve_post(request, post_id):
+    """View para aprovar um post específico."""
+    if request.user.profile.user_type not in ['admin', 'teacher']:
+        messages.error(request, 'Não tens permissão para aprovar posts.')
+        return redirect('blog:post_list')
+    
+    post = get_object_or_404(Post, id=post_id)
+    
+    if request.method == 'POST':
+        post.status = 'published'
+        post.published_at = timezone.now()
+        post.save()
+        messages.success(request, f'Post "{post.title}" foi aprovado e publicado.')
+        return redirect('blog:pending_posts')
+    
     context = {
-        'user': request.user,
-        'profile': request.user.profile,
-        'posts': Post.objects.filter(author=request.user).order_by('-created_at'),
+        'post': post,
     }
-    return render(request, 'blog/profile.html', context)
+    return render(request, 'blog/approve_post.html', context)
+
+@login_required
+def moderate_comments(request):
+    """View para moderar comentários."""
+    if not request.user.is_teacher:
+        messages.error(request, 'Você não tem permissão para acessar esta página.')
+        return redirect('blog:post_list')
+    
+    # Busca comentários pendentes ordenados por data de criação
+    pending_comments = Comment.objects.filter(status='pending').order_by('-created_at')
+    
+    if request.method == 'POST':
+        comment_id = request.POST.get('comment_id')
+        action = request.POST.get('action')
+        notes = request.POST.get('notes', '')
+        
+        if comment_id and action:
+            comment = get_object_or_404(Comment, id=comment_id)
+            
+            if action == 'approve':
+                comment.approve(request.user)
+                messages.success(request, f'Comentário de {comment.author.get_full_name()} foi aprovado.')
+                
+            elif action == 'reject':
+                comment.reject(request.user, notes)
+                messages.warning(request, f'Comentário de {comment.author.get_full_name()} foi rejeitado.')
+    
+    context = {
+        'pending_comments': pending_comments,
+    }
+    return render(request, 'blog/moderate_comments.html', context)
+
+@login_required
+def manage_users(request):
+    if not request.user.is_teacher:
+        messages.error(request, 'Acesso não autorizado.')
+        return redirect('blog:post_list')
+    
+    # Buscar usuários convidados (que pertencem ao grupo 'guest')
+    guest_users = User.objects.filter(groups__name='guest').order_by('-date_joined')
+    
+    context = {
+        'guest_users': guest_users,
+    }
+    return render(request, 'blog/manage_users.html', context)
+
+@login_required
+def convert_to_student(request, user_id):
+    if not request.user.is_teacher:
+        messages.error(request, 'Acesso não autorizado.')
+        return redirect('blog:post_list')
+    
+    user = get_object_or_404(User, id=user_id)
+    
+    # Verificar se o usuário é um convidado
+    if not user.is_guest:
+        messages.error(request, 'Este usuário não é um convidado.')
+        return redirect('blog:manage_users')
+    
+    # Remover do grupo 'guest' e adicionar ao grupo 'student'
+    guest_group = Group.objects.get(name='guest')
+    student_group = Group.objects.get(name='student')
+    
+    user.groups.remove(guest_group)
+    user.groups.add(student_group)
+    
+    messages.success(request, f'Usuário {user.get_full_name()} convertido para aluno com sucesso!')
+    return redirect('blog:manage_users')
+
+@method_decorator(require_POST, name='dispatch')
+class CreateCategoryView(View):
+    def post(self, request):
+        name = request.POST.get('name')
+        if not name:
+            return JsonResponse({'error': 'Nome da categoria é obrigatório'}, status=400)
+            
+        try:
+            # Tenta encontrar uma categoria existente com o mesmo nome
+            category = Category.objects.get(name=name)
+        except Category.DoesNotExist:
+            # Se não existir, cria uma nova categoria
+            category = Category.objects.create(name=name)
+            
+        return JsonResponse({
+            'id': category.id,
+            'name': category.name
+        })

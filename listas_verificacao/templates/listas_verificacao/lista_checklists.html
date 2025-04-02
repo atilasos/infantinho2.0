@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Lista de Verificações - Infantinho 2.0{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">Lista de Verificações</h1>
+            
+            {% if user.is_teacher %}
+            <div class="mb-4">
+                <a href="{% url 'listas_verificacao:criar_checklist' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nova Lista de Verificação
+                </a>
+            </div>
+            {% endif %}
+            
+            {% if checklists %}
+                <div class="row">
+                    {% for checklist in checklists %}
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ checklist.titulo }}</h5>
+                                <p class="card-text">{{ checklist.descricao|truncatewords:30 }}</p>
+                                <p class="card-text">
+                                    <small class="text-muted">
+                                        Criado por: {{ checklist.criado_por.get_full_name|default:checklist.criado_por.username }}
+                                    </small>
+                                </p>
+                            </div>
+                            <div class="card-footer bg-transparent">
+                                <a href="{% url 'listas_verificacao:detalhe_checklist' checklist.id %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-eye"></i> Visualizar
+                                </a>
+                                {% if user.is_teacher and user == checklist.criado_por %}
+                                <a href="{% url 'listas_verificacao:editar_checklist' checklist.id %}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-edit"></i> Editar
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Nenhuma lista de verificação encontrada.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

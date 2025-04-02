@@ -1,0 +1,73 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+
+{% block title %}Gestão de Aprendizagens Essenciais{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>Aprendizagens Essenciais</h2>
+                <a href="{% url 'listas_verificacao:importar_aprendizagens' %}" class="btn btn-primary">
+                    <i class="fas fa-file-import"></i> Importar CSV
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Disciplina</th>
+                                    <th>Domínio</th>
+                                    <th>Subdomínio</th>
+                                    <th>Ano</th>
+                                    <th>Descrição</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for aprendizagem in aprendizagens %}
+                                    <tr>
+                                        <td>{{ aprendizagem.codigo }}</td>
+                                        <td>{{ aprendizagem.disciplina.nome }}</td>
+                                        <td>{{ aprendizagem.dominio.nome }}</td>
+                                        <td>{{ aprendizagem.subdominio.nome|default:"-" }}</td>
+                                        <td>{{ aprendizagem.ano_escolar }}º Ano</td>
+                                        <td>{{ aprendizagem.descricao|truncatewords:20 }}</td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <a href="{% url 'listas_verificacao:editar_aprendizagem' aprendizagem.id %}" 
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a href="{% url 'listas_verificacao:excluir_aprendizagem' aprendizagem.id %}" 
+                                                   class="btn btn-sm btn-outline-danger">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="7" class="text-center">
+                                            Nenhuma aprendizagem essencial registada.
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

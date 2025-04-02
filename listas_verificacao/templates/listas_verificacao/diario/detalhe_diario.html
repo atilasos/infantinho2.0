@@ -1,0 +1,200 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+
+{% block title %}{{ diario.titulo }}{% endblock %}
+
+{% block listas_content %}
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'listas_verificacao:lista_diarios' %}">Diários</a></li>
+            <li class="breadcrumb-item active">{{ diario.titulo }}</li>
+        </ol>
+    </nav>
+
+    <!-- Cabeçalho do Diário -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">{{ diario.titulo }}</h4>
+            <div>
+                {% if diario.partilhado %}
+                <span class="badge bg-success">Partilhado</span>
+                {% else %}
+                <span class="badge bg-secondary">Privado</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <p class="card-text">{{ diario.descricao }}</p>
+                <div class="text-muted small">
+                    <i class="fas fa-user"></i> {{ diario.aluno.get_full_name }}
+                    <br>
+                    <i class="fas fa-users"></i> {{ diario.turma.nome }}
+                    <br>
+                    <i class="fas fa-clock"></i> Criado em {{ diario.data_criacao|date:"d/m/Y H:i" }}
+                </div>
+            </div>
+
+            {% if request.user == diario.aluno %}
+            <div class="d-flex justify-content-between align-items-center">
+                <button class="btn btn-outline-secondary btn-sm toggle-partilha" data-diario-id="{{ diario.id }}" data-partilhado="{{ diario.partilhado|lower }}">
+                    <i class="fas {% if diario.partilhado %}fa-lock{% else %}fa-share{% endif %}"></i>
+                    {% if diario.partilhado %}Tornar Privado{% else %}Partilhar{% endif %}
+                </button>
+                <a href="{% url 'listas_verificacao:criar_entrada' diario.id %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nova Entrada
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Lista de Entradas -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Entradas do Diário</h5>
+            {% if request.user == diario.aluno %}
+            <a href="{% url 'listas_verificacao:criar_entrada' diario.id %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus"></i> Nova Entrada
+            </a>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            {% if entradas %}
+                {% for entrada in entradas %}
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">{{ entrada.titulo }}</h6>
+                        <span class="badge bg-info">{{ entrada.get_tipo_display }}</span>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">{{ entrada.conteudo }}</p>
+                        
+                        {% if entrada.aprendizagens.exists %}
+                        <div class="mb-2">
+                            <strong>Aprendizagens Relacionadas:</strong>
+                            <ul class="list-unstyled">
+                                {% for aprendizagem in entrada.aprendizagens.all %}
+                                <li><i class="fas fa-check-circle text-success"></i> {{ aprendizagem.codigo }} - {{ aprendizagem.descricao|truncatechars:100 }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+
+                        {% if entrada.anexos %}
+                        <div class="mb-2">
+                            <strong>Anexos:</strong>
+                            <a href="{{ entrada.anexos.url }}" class="btn btn-outline-primary btn-sm" target="_blank">
+                                <i class="fas fa-paperclip"></i> Ver Anexo
+                            </a>
+                        </div>
+                        {% endif %}
+
+                        <div class="text-muted small">
+                            <i class="fas fa-clock"></i> {{ entrada.data_criacao|date:"d/m/Y H:i" }}
+                        </div>
+
+                        <!-- Comentários -->
+                        {% if entrada.comentarios.exists %}
+                        <div class="mt-3">
+                            <h6>Comentários</h6>
+                            {% for comentario in entrada.comentarios.all %}
+                            <div class="card mb-2">
+                                <div class="card-body py-2">
+                                    <p class="mb-1">{{ comentario.conteudo }}</p>
+                                    <small class="text-muted">
+                                        {{ comentario.autor.get_full_name }} - {{ comentario.data_criacao|date:"d/m/Y H:i" }}
+                                    </small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Botão de Comentar -->
+                        <div class="mt-2">
+                            <a href="{% url 'listas_verificacao:adicionar_comentario_entrada' entrada.id %}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-comment"></i> Comentar
+                            </a>
+                            {% if request.user == diario.aluno %}
+                            <a href="{% url 'listas_verificacao:adicionar_conexao' entrada.id %}" class="btn btn-outline-info btn-sm">
+                                <i class="fas fa-link"></i> Adicionar Conexão
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Ainda não há entradas neste diário.
+                    {% if request.user == diario.aluno %}
+                    <p class="mb-0 mt-2">Comece adicionando sua primeira entrada!</p>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.toggle-partilha').forEach(button => {
+    button.addEventListener('click', function() {
+        const diarioId = this.dataset.diarioId;
+        const isPartilhado = this.dataset.partilhado === 'true';
+        
+        fetch(`/listas-verificacao/diario/${diarioId}/toggle-partilha/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Atualizar o botão
+                const icon = this.querySelector('i');
+                icon.classList.remove(isPartilhado ? 'fa-lock' : 'fa-share');
+                icon.classList.add(isPartilhado ? 'fa-share' : 'fa-lock');
+                this.innerHTML = isPartilhado ? '<i class="fas fa-share"></i> Partilhar' : '<i class="fas fa-lock"></i> Tornar Privado';
+                this.dataset.partilhado = (!isPartilhado).toString();
+                
+                // Atualizar o badge
+                const header = document.querySelector('.card-header');
+                const badge = header.querySelector('.badge');
+                if (isPartilhado) {
+                    badge.className = 'badge bg-secondary';
+                    badge.textContent = 'Privado';
+                } else {
+                    badge.className = 'badge bg-success';
+                    badge.textContent = 'Partilhado';
+                }
+                
+                // Recarregar a página para atualizar as permissões
+                location.reload();
+            }
+        });
+    });
+});
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}
+{% endblock %} 

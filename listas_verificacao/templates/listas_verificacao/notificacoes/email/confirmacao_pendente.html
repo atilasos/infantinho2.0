@@ -1,0 +1,38 @@
+{% extends "listas_verificacao/notificacoes/email/base_email.html" %}
+
+{% block email_content %}
+<p>Olá,</p>
+
+<p>Há uma confirmação pendente para a seguinte aprendizagem:</p>
+
+<div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0;">
+    <h3 style="margin-top: 0;">{{ aprendizagem.codigo }}</h3>
+    <p>{{ aprendizagem.descricao }}</p>
+</div>
+
+<div style="background-color: #e9ecef; padding: 15px; border-radius: 5px; margin: 15px 0;">
+    <h4 style="margin-top: 0;">Progresso do Aluno</h4>
+    <p><strong>Aluno:</strong> {{ aluno }}</p>
+    <p><strong>Estado atual:</strong> {{ progresso.get_estado_display }}</p>
+    {% if progresso.observacoes %}
+    <p><strong>Observações do aluno:</strong></p>
+    <div style="background-color: #fff3cd; padding: 10px; border-radius: 5px; margin: 10px 0;">
+        {{ progresso.observacoes }}
+    </div>
+    {% endif %}
+</div>
+
+<p>Ações necessárias:</p>
+<ul>
+    <li>Revisar o progresso do aluno</li>
+    <li>Verificar se os critérios de aprendizagem foram atendidos</li>
+    <li>Confirmar ou solicitar ajustes no progresso</li>
+    <li>Fornecer feedback construtivo</li>
+</ul>
+
+<div style="margin-top: 20px;">
+    <a href="{{ site_url }}{% url 'listas_verificacao:lista_aluno' %}" class="button">
+        Ver Minhas Listas
+    </a>
+</div>
+{% endblock %} 

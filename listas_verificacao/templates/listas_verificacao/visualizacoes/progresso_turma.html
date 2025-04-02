@@ -1,0 +1,152 @@
+{% extends 'listas_verificacao/visualizacoes/base.html' %}
+
+{% block title %}Visualização do Progresso - {{ turma.nome }} - Infantinho 2.0{% endblock %}
+
+{% block visualization_content %}
+<div class="visualization-container">
+    <div class="visualization-header">
+        <h2 class="visualization-title">Progresso da Turma ao Longo do Tempo</h2>
+        <div class="visualization-actions">
+            <button class="btn btn-outline-primary btn-sm" onclick="toggleDataPoints()">
+                <i class="fas fa-dot-circle"></i> Alternar Pontos
+            </button>
+            <button class="btn btn-outline-primary btn-sm" onclick="toggleGrid()">
+                <i class="fas fa-border-all"></i> Alternar Grade
+            </button>
+        </div>
+    </div>
+    
+    <div class="visualization-content">
+        <div class="visualization-loading">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+        </div>
+        <canvas id="progressoChart"></canvas>
+    </div>
+    
+    <div class="visualization-legend">
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #4CAF50;"></div>
+            <span class="legend-label">Progresso Geral</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #FFC107;"></div>
+            <span class="legend-label">Dificuldades</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #2196F3;"></div>
+            <span class="legend-label">Conclusões</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Dados do gráfico
+    const chartData = {
+        labels: {{ datas|safe }},
+        datasets: [
+            {
+                label: 'Progresso Geral',
+                data: {{ progresso_geral|safe }},
+                borderColor: '#4CAF50',
+                backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                fill: true,
+                tension: 0.4,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            },
+            {
+                label: 'Dificuldades',
+                data: {{ dificuldades|safe }},
+                borderColor: '#FFC107',
+                backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                fill: true,
+                tension: 0.4,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            },
+            {
+                label: 'Conclusões',
+                data: {{ conclusoes|safe }},
+                borderColor: '#2196F3',
+                backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                fill: true,
+                tension: 0.4,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }
+        ]
+    };
+    
+    // Configuração do gráfico
+    const config = {
+        type: 'line',
+        data: chartData,
+        options: {
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.parsed.y}%`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    },
+                    grid: {
+                        display: true,
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: true,
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    }
+                }
+            },
+            interaction: {
+                mode: 'nearest',
+                axis: 'x',
+                intersect: false
+            }
+        }
+    };
+    
+    // Criar o gráfico
+    const canvas = document.getElementById('progressoChart');
+    const chart = createResponsiveChart(canvas, config);
+    
+    // Funções de controle
+    function toggleDataPoints() {
+        const showPoints = chart.options.elements.point.radius > 0;
+        chart.options.elements.point.radius = showPoints ? 0 : 4;
+        chart.options.elements.point.hoverRadius = showPoints ? 0 : 6;
+        chart.update();
+    }
+    
+    function toggleGrid() {
+        const showGrid = chart.options.scales.x.grid.display;
+        chart.options.scales.x.grid.display = !showGrid;
+        chart.options.scales.y.grid.display = !showGrid;
+        chart.update();
+    }
+    
+    // Ocultar loading após carregar o gráfico
+    toggleLoading(document.querySelector('.visualization-container'), false);
+</script>
+{% endblock %} 

@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Configuração de Backup - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">Configuração de Backup Automático</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                {{ form.ativo }}
+                                <label class="form-check-label" for="{{ form.ativo.id_for_label }}">Backup Automático Ativo</label>
+                            </div>
+                            {% if form.ativo.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.ativo.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.frequencia.id_for_label }}" class="form-label">Frequência</label>
+                            {{ form.frequencia }}
+                            {% if form.frequencia.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.frequencia.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Defina com qual frequência o backup será realizado.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.horario_execucao.id_for_label }}" class="form-label">Horário de Execução</label>
+                            {{ form.horario_execucao }}
+                            {% if form.horario_execucao.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.horario_execucao.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Defina o horário em que o backup será realizado.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.numero_backups.id_for_label }}" class="form-label">Número de Backups</label>
+                            {{ form.numero_backups }}
+                            {% if form.numero_backups.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.numero_backups.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Quantos backups serão mantidos antes de começar a excluir os mais antigos.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                {{ form.incluir_media }}
+                                <label class="form-check-label" for="{{ form.incluir_media.id_for_label }}">Incluir Arquivos de Mídia</label>
+                            </div>
+                            {% if form.incluir_media.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.incluir_media.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Se marcado, os arquivos de mídia também serão incluídos no backup.</div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar Configurações
+                            </button>
+                            <a href="{% url 'exportacao_backup:lista_backups' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,192 @@
+{% extends "personalizacao/base_personalizacao.html" %}
+
+{% block personalizacao_content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">Dashboard Personalizado</h5>
+        <div>
+            <a href="{% url 'personalizacao:adicionar_widget' %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-2"></i>Adicionar Widget
+            </a>
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="btnEditarLayout">
+                <i class="fas fa-edit me-2"></i>Editar Layout
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="dashboard-grid" id="dashboardGrid">
+            {% for widget in widgets %}
+            <div class="dashboard-widget" data-widget-id="{{ widget.id }}"
+                 style="grid-column: span {{ widget.largura }}; grid-row: span {{ widget.altura }};">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="card-title mb-0">
+                            <i class="{{ widget.widget.icone }} me-2"></i>{{ widget.widget.nome }}
+                        </h6>
+                        <div class="widget-actions">
+                            <a href="{% url 'personalizacao:editar_widget' widget.id %}" class="btn btn-link btn-sm">
+                                <i class="fas fa-cog"></i>
+                            </a>
+                            <button type="button" class="btn btn-link btn-sm btn-remove-widget" data-widget-id="{{ widget.id }}">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {% if widget.widget.tipo == 'calendario' %}
+                        <div class="widget-calendar">
+                            <!-- Conteúdo do widget de calendário -->
+                        </div>
+                        {% elif widget.widget.tipo == 'notas' %}
+                        <div class="widget-notes">
+                            <!-- Conteúdo do widget de notas -->
+                        </div>
+                        {% elif widget.widget.tipo == 'tarefas' %}
+                        <div class="widget-tasks">
+                            <!-- Conteúdo do widget de tarefas -->
+                        </div>
+                        {% elif widget.widget.tipo == 'estatisticas' %}
+                        <div class="widget-stats">
+                            <!-- Conteúdo do widget de estatísticas -->
+                        </div>
+                        {% elif widget.widget.tipo == 'graficos' %}
+                        <div class="widget-charts">
+                            <!-- Conteúdo do widget de gráficos -->
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>Nenhum widget adicionado ao dashboard.
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Remoção -->
+<div class="modal fade" id="modalRemoverWidget" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Remover Widget</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja remover este widget do dashboard?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="post" action="" id="formRemoverWidget">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Remover</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.dashboard-widget {
+    min-height: 200px;
+}
+
+.dashboard-widget .card {
+    height: 100%;
+}
+
+.widget-actions {
+    display: none;
+}
+
+.dashboard-widget:hover .widget-actions {
+    display: block;
+}
+
+.dashboard-widget.dragging {
+    opacity: 0.5;
+}
+
+.dashboard-widget.drag-over {
+    border: 2px dashed var(--bs-primary);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar Sortable para drag and drop
+    const grid = document.getElementById('dashboardGrid');
+    const sortable = new Sortable(grid, {
+        animation: 150,
+        ghostClass: 'dragging',
+        onEnd: function(evt) {
+            const widgetId = evt.item.dataset.widgetId;
+            const newX = evt.newIndex % 12;
+            const newY = Math.floor(evt.newIndex / 12);
+            
+            // Atualizar posição no servidor
+            fetch(`/personalizacao/dashboard/widget/${widgetId}/posicao/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({
+                    x: newX,
+                    y: newY
+                })
+            });
+        }
+    });
+    
+    // Configurar modal de remoção
+    const modalRemover = new bootstrap.Modal(document.getElementById('modalRemoverWidget'));
+    const formRemover = document.getElementById('formRemoverWidget');
+    
+    document.querySelectorAll('.btn-remove-widget').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const widgetId = this.dataset.widgetId;
+            formRemover.action = `/personalizacao/dashboard/widget/${widgetId}/remover/`;
+            modalRemover.show();
+        });
+    });
+    
+    // Configurar modo de edição
+    const btnEditarLayout = document.getElementById('btnEditarLayout');
+    let modoEdicao = false;
+    
+    btnEditarLayout.addEventListener('click', function() {
+        modoEdicao = !modoEdicao;
+        this.classList.toggle('active');
+        
+        document.querySelectorAll('.dashboard-widget').forEach(widget => {
+            widget.classList.toggle('editable');
+        });
+        
+        if (modoEdicao) {
+            this.innerHTML = '<i class="fas fa-check me-2"></i>Salvar Layout';
+        } else {
+            this.innerHTML = '<i class="fas fa-edit me-2"></i>Editar Layout';
+        }
+    });
+});
+</script>
+{% endblock %} 

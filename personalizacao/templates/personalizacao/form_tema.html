@@ -1,0 +1,151 @@
+{% extends "personalizacao/base_personalizacao.html" %}
+
+{% block title %}{% if tema %}Editar{% else %}Novo{% endif %} Tema - {{ block.super }}{% endblock %}
+
+{% block personalizacao_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{% if tema %}Editar{% else %}Novo{% endif %} Tema</h1>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.nome.id_for_label }}" class="form-label">Nome</label>
+                        {{ form.nome }}
+                        {% if form.nome.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.nome.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.descricao.id_for_label }}" class="form-label">Descrição</label>
+                        {{ form.descricao }}
+                        {% if form.descricao.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.descricao.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.cores_primarias.id_for_label }}" class="form-label">Cores Primárias</label>
+                        {{ form.cores_primarias }}
+                        <div class="form-text">JSON com as cores primárias do tema</div>
+                        {% if form.cores_primarias.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.cores_primarias.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.cores_secundarias.id_for_label }}" class="form-label">Cores Secundárias</label>
+                        {{ form.cores_secundarias }}
+                        <div class="form-text">JSON com as cores secundárias do tema</div>
+                        {% if form.cores_secundarias.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.cores_secundarias.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.fonte_principal.id_for_label }}" class="form-label">Fonte Principal</label>
+                        {{ form.fonte_principal }}
+                        {% if form.fonte_principal.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.fonte_principal.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.fonte_secundaria.id_for_label }}" class="form-label">Fonte Secundária</label>
+                        {{ form.fonte_secundaria }}
+                        {% if form.fonte_secundaria.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.fonte_secundaria.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'personalizacao:lista_temas' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Salvar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Preview do Tema</h5>
+            </div>
+            <div class="card-body">
+                <div id="preview-tema" class="p-3">
+                    <h4>Exemplo de Título</h4>
+                    <p>Este é um exemplo de texto usando a fonte principal do tema.</p>
+                    <button class="btn btn-primary">Botão Primário</button>
+                    <button class="btn btn-secondary">Botão Secundário</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Função para atualizar o preview do tema
+    function atualizarPreview() {
+        const preview = document.getElementById('preview-tema');
+        const coresPrimarias = JSON.parse(document.getElementById('{{ form.cores_primarias.id_for_label }}').value || '{}');
+        const coresSecundarias = JSON.parse(document.getElementById('{{ form.cores_secundarias.id_for_label }}').value || '{}');
+        const fontePrincipal = document.getElementById('{{ form.fonte_principal.id_for_label }}').value;
+        const fonteSecundaria = document.getElementById('{{ form.fonte_secundaria.id_for_label }}').value;
+
+        // Aplicar cores
+        if (coresPrimarias.primary) {
+            preview.style.setProperty('--bs-primary', coresPrimarias.primary);
+        }
+        if (coresSecundarias.secondary) {
+            preview.style.setProperty('--bs-secondary', coresSecundarias.secondary);
+        }
+
+        // Aplicar fontes
+        preview.style.fontFamily = fontePrincipal;
+        preview.querySelector('h4').style.fontFamily = fonteSecundaria;
+    }
+
+    // Atualizar preview quando os campos mudarem
+    const campos = [
+        '{{ form.cores_primarias.id_for_label }}',
+        '{{ form.cores_secundarias.id_for_label }}',
+        '{{ form.fonte_principal.id_for_label }}',
+        '{{ form.fonte_secundaria.id_for_label }}'
+    ];
+
+    campos.forEach(campo => {
+        document.getElementById(campo).addEventListener('input', atualizarPreview);
+    });
+
+    // Atualizar preview inicial
+    atualizarPreview();
+});
+</script>
+{% endblock %} 

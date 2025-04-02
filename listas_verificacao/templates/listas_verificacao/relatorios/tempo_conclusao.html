@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load listas_filters %}
+
+{% block title %}Relatório de Tempo de Conclusão - {{ turma.nome }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>Relatório de Tempo de Conclusão</h1>
+            <h2 class="h4 text-muted">{{ turma.nome }}</h2>
+            <p class="text-muted">Gerado em {{ relatorio.data_geracao|date:"d/m/Y H:i" }}</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'listas_verificacao:dashboard_turma' turma.id %}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Métricas Gerais -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total de Listas</h5>
+                    <p class="card-text display-4">{{ relatorio.total_listas }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total de Alunos</h5>
+                    <p class="card-text display-4">{{ relatorio.total_alunos }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Tempo Médio Geral</h5>
+                    <p class="card-text display-4">{{ relatorio.tempo_medio_geral|timedelta }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tempo por Lista -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title mb-0">Tempo de Conclusão por Lista</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Lista</th>
+                            <th>Tempo Médio</th>
+                            <th>Tempo Mínimo</th>
+                            <th>Tempo Máximo</th>
+                            <th>Alunos Concluídos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in relatorio.tempo_listas %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'listas_verificacao:detalhes_lista' item.lista.id %}">
+                                    {{ item.lista.titulo }}
+                                </a>
+                            </td>
+                            <td>
+                                {% if item.tempo_medio %}
+                                    {{ item.tempo_medio|timedelta }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.tempo_min %}
+                                    {{ item.tempo_min|timedelta }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.tempo_max %}
+                                    {{ item.tempo_max|timedelta }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ item.alunos_concluidos }}/{{ item.total_alunos }}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center">
+                                <p class="text-muted mb-0">Nenhuma lista com tempo de conclusão registrado.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Adicionar tooltips aos elementos
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip()
+    })
+</script>
+{% endblock %} 

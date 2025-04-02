@@ -1,0 +1,132 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+
+{% block title %}Diários de Aprendizagem{% endblock %}
+
+{% block listas_content %}
+<div class="container mt-4">
+    <!-- Cabeçalho -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Diários de Aprendizagem</h2>
+        {% if not request.user.is_teacher %}
+        <a href="{% url 'listas_verificacao:criar_diario' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Novo Diário
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Lista de Diários -->
+    <div class="row">
+        {% if diarios %}
+            {% for diario in diarios %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">{{ diario.titulo }}</h5>
+                        {% if diario.partilhado %}
+                        <span class="badge bg-success">Partilhado</span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">{{ diario.descricao|truncatewords:30 }}</p>
+                        <div class="text-muted small mb-2">
+                            <i class="fas fa-user"></i> {{ diario.aluno.get_full_name }}
+                            <br>
+                            <i class="fas fa-users"></i> {{ diario.turma.nome }}
+                            <br>
+                            <i class="fas fa-clock"></i> Última atualização: {{ diario.data_atualizacao|date:"d/m/Y H:i" }}
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="{% url 'listas_verificacao:detalhe_diario' diario.id %}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-book-open"></i> Ver Diário
+                            </a>
+                            {% if request.user == diario.aluno %}
+                            <button class="btn btn-outline-secondary btn-sm toggle-partilha" data-diario-id="{{ diario.id }}" data-partilhado="{{ diario.partilhado|lower }}">
+                                <i class="fas {% if diario.partilhado %}fa-lock{% else %}fa-share{% endif %}"></i>
+                                {% if diario.partilhado %}Tornar Privado{% else %}Partilhar{% endif %}
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    {% if request.user.is_teacher %}
+                        Ainda não há diários partilhados nas suas turmas.
+                    {% else %}
+                        Você ainda não tem diários. Que tal criar um?
+                        <br>
+                        <a href="{% url 'listas_verificacao:criar_diario' %}" class="btn btn-primary mt-3">
+                            <i class="fas fa-plus"></i> Criar Meu Primeiro Diário
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.toggle-partilha').forEach(button => {
+    button.addEventListener('click', function() {
+        const diarioId = this.dataset.diarioId;
+        const isPartilhado = this.dataset.partilhado === 'true';
+        
+        fetch(`/listas-verificacao/diario/${diarioId}/toggle-partilha/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Atualizar o botão
+                const icon = this.querySelector('i');
+                icon.classList.remove(isPartilhado ? 'fa-lock' : 'fa-share');
+                icon.classList.add(isPartilhado ? 'fa-share' : 'fa-lock');
+                this.innerHTML = isPartilhado ? '<i class="fas fa-share"></i> Partilhar' : '<i class="fas fa-lock"></i> Tornar Privado';
+                this.dataset.partilhado = (!isPartilhado).toString();
+                
+                // Atualizar o badge
+                const card = this.closest('.card');
+                const badge = card.querySelector('.badge');
+                if (isPartilhado) {
+                    badge.remove();
+                } else {
+                    const header = card.querySelector('.card-header');
+                    const newBadge = document.createElement('span');
+                    newBadge.className = 'badge bg-success';
+                    newBadge.textContent = 'Partilhado';
+                    header.appendChild(newBadge);
+                }
+            }
+        });
+    });
+});
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}
+{% endblock %} 

@@ -1,0 +1,159 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+
+{% block title %}Registrar Reflexão - {{ meta.titulo }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'lista_metas' %}">Metas</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'detalhe_meta' meta.id %}">{{ meta.titulo }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Registrar Reflexão</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h1 class="h2 mb-0">Registrar Reflexão</h1>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <h5 class="alert-heading"><i class="fas fa-lightbulb"></i> Sobre Reflexões</h5>
+                        <p class="mb-0">
+                            As reflexões são momentos importantes para pensar sobre seu progresso, 
+                            identificar o que está funcionando bem e o que pode ser melhorado. 
+                            Seja honesto em sua autoavaliação e use este espaço para registrar suas percepções e aprendizados.
+                        </p>
+                    </div>
+
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="mb-4">
+                            <label for="{{ form.conteudo.id_for_label }}" class="form-label">Reflexão</label>
+                            {{ form.conteudo }}
+                            {% if form.conteudo.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.conteudo.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Compartilhe suas reflexões sobre o progresso da meta até agora. 
+                                O que você aprendeu? Como você tem se desenvolvido?
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.nivel_satisfacao.id_for_label }}" class="form-label">Nível de Satisfação</label>
+                            {{ form.nivel_satisfacao }}
+                            {% if form.nivel_satisfacao.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.nivel_satisfacao.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Avalie seu nível de satisfação com o progresso até o momento.</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.dificuldades_encontradas.id_for_label }}" class="form-label">Dificuldades Encontradas</label>
+                            {{ form.dificuldades_encontradas }}
+                            {% if form.dificuldades_encontradas.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.dificuldades_encontradas.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Quais foram os principais desafios ou obstáculos que você encontrou? 
+                                Como você lidou com eles?
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.estrategias_sucesso.id_for_label }}" class="form-label">Estratégias de Sucesso</label>
+                            {{ form.estrategias_sucesso }}
+                            {% if form.estrategias_sucesso.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.estrategias_sucesso.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Quais estratégias ou abordagens funcionaram bem para você? 
+                                O que você faria diferente da próxima vez?
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.sugestoes_melhoria.id_for_label }}" class="form-label">Sugestões de Melhoria</label>
+                            {{ form.sugestoes_melhoria }}
+                            {% if form.sugestoes_melhoria.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.sugestoes_melhoria.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Que sugestões você tem para melhorar seu processo de aprendizagem ou a meta em si?
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'detalhe_meta' meta.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Registrar Reflexão
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+    $(document).ready(function() {
+        $('.select2').select2({
+            theme: 'bootstrap-5'
+        });
+
+        // Validação do formulário
+        (function () {
+            'use strict'
+            var forms = document.querySelectorAll('.needs-validation')
+            Array.prototype.slice.call(forms)
+                .forEach(function (form) {
+                    form.addEventListener('submit', function (event) {
+                        if (!form.checkValidity()) {
+                            event.preventDefault()
+                            event.stopPropagation()
+                        }
+                        form.classList.add('was-validated')
+                    }, false)
+                })
+        })()
+    });
+</script>
+{% endblock %} 

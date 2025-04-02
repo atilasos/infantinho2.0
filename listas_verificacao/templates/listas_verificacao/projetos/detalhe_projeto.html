@@ -1,0 +1,249 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+
+{% block title %}{{ projeto.titulo }} - Projeto Colaborativo{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Cabeçalho -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-1">{{ projeto.titulo }}</h1>
+            <div class="text-muted">
+                <span class="badge {% if projeto.estado == 'em_andamento' %}bg-primary{% elif projeto.estado == 'concluido' %}bg-success{% elif projeto.estado == 'pausado' %}bg-warning{% else %}bg-secondary{% endif %} me-2">
+                    {{ projeto.get_estado_display }}
+                </span>
+                <span class="badge bg-info me-2">{{ projeto.turma.nome }}</span>
+                <small class="text-muted">
+                    <i class="fas fa-calendar"></i> Início: {{ projeto.data_inicio|date:"d/m/Y" }}
+                    {% if projeto.data_fim %}
+                        | Término: {{ projeto.data_fim|date:"d/m/Y" }}
+                    {% endif %}
+                </small>
+            </div>
+        </div>
+        <div>
+            {% if user.is_professor or user in projeto.participantes.all %}
+                <button type="button" class="btn btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#modalAtualizarEstado">
+                    <i class="fas fa-sync"></i> Atualizar Estado
+                </button>
+                <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalRegistrarResultado">
+                    <i class="fas fa-check-circle"></i> Registrar Resultado
+                </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Conteúdo Principal -->
+        <div class="col-md-8">
+            <!-- Descrição e Objetivos -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="h5 mb-3">Descrição e Objetivos</h3>
+                    <p class="card-text">{{ projeto.descricao|linebreaks }}</p>
+                    <h4 class="h6 mb-2 mt-4">Objetivos</h4>
+                    <p class="card-text">{{ projeto.objetivo|linebreaks }}</p>
+                </div>
+            </div>
+
+            <!-- Aprendizagens Relacionadas -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="h5 mb-3">Aprendizagens Relacionadas</h3>
+                    <div class="row">
+                        {% for aprendizagem in projeto.aprendizagens.all %}
+                            <div class="col-md-6 mb-2">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5 class="card-title h6">{{ aprendizagem.codigo }}</h5>
+                                        <p class="card-text small">{{ aprendizagem.descricao|truncatewords:20 }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="col-12">
+                                <p class="text-muted">Nenhuma aprendizagem relacionada.</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Desafios e Soluções -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="h5 mb-3">Desafios e Soluções</h3>
+                    
+                    <h4 class="h6 mb-2">Desafios Encontrados</h4>
+                    <p class="card-text">{{ projeto.desafios|linebreaks }}</p>
+                    
+                    <h4 class="h6 mb-2 mt-4">Soluções Implementadas</h4>
+                    <p class="card-text">{{ projeto.solucoes|linebreaks }}</p>
+                </div>
+            </div>
+
+            <!-- Resultados -->
+            {% if projeto.resultados %}
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h3 class="h5 mb-3">Resultados</h3>
+                        <p class="card-text">{{ projeto.resultados|linebreaks }}</p>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Feedback da Comunidade -->
+            {% if projeto.feedback_comunidade %}
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h3 class="h5 mb-3">Feedback da Comunidade</h3>
+                        <p class="card-text">{{ projeto.feedback_comunidade|linebreaks }}</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Barra Lateral -->
+        <div class="col-md-4">
+            <!-- Participantes -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="h5 mb-3">Participantes</h3>
+                    <div class="list-group">
+                        {% for participante in projeto.participantes.all %}
+                            <div class="list-group-item">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-user-circle fa-2x text-muted"></i>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h6 class="mb-0">{{ participante.get_full_name }}</h6>
+                                        <small class="text-muted">{{ participante.email }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Responsabilidades -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="h5 mb-3">Responsabilidades</h3>
+                    <p class="card-text">{{ projeto.responsabilidades|linebreaks }}</p>
+                </div>
+            </div>
+
+            <!-- Recursos Necessários -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="h5 mb-3">Recursos Necessários</h3>
+                    <p class="card-text">{{ projeto.recursos_necessarios|linebreaks }}</p>
+                </div>
+            </div>
+
+            <!-- Conquistas Relacionadas -->
+            {% if conquistas_relacionadas %}
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h3 class="h5 mb-3">Conquistas Relacionadas</h3>
+                        <div class="list-group">
+                            {% for conquista in conquistas_relacionadas %}
+                                <a href="{% url 'listas_verificacao:detalhe_conquista' conquista.id %}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0">
+                                            <i class="fas fa-trophy text-warning"></i>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <h6 class="mb-0">{{ conquista.titulo }}</h6>
+                                            <small class="text-muted">{{ conquista.get_tipo_display }}</small>
+                                        </div>
+                                    </div>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Atualização de Estado -->
+<div class="modal fade" id="modalAtualizarEstado" tabindex="-1" aria-labelledby="modalAtualizarEstadoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalAtualizarEstadoLabel">Atualizar Estado do Projeto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'listas_verificacao:atualizar_estado_projeto' projeto.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="estado" class="form-label">Novo Estado</label>
+                        <select class="form-select" id="estado" name="estado" required>
+                            {% for estado_id, estado_nome in estados %}
+                                <option value="{{ estado_id }}" {% if estado_id == projeto.estado %}selected{% endif %}>
+                                    {{ estado_nome }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="data_fim" class="form-label">Data de Término (opcional)</label>
+                        <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ projeto.data_fim|date:'Y-m-d' }}">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Atualizar Estado</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Registro de Resultado -->
+<div class="modal fade" id="modalRegistrarResultado" tabindex="-1" aria-labelledby="modalRegistrarResultadoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalRegistrarResultadoLabel">Registrar Resultado</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'listas_verificacao:registrar_resultado_projeto' projeto.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="resultados" class="form-label">Resultados Alcançados</label>
+                        <textarea class="form-control" id="resultados" name="resultados" rows="5" required>{{ projeto.resultados }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="feedback_comunidade" class="form-label">Feedback da Comunidade</label>
+                        <textarea class="form-control" id="feedback_comunidade" name="feedback_comunidade" rows="5">{{ projeto.feedback_comunidade }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Registrar Resultado</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Inicializa o select2 para melhor experiência de seleção
+        $('.form-select').select2({
+            theme: 'bootstrap-5',
+            width: '100%'
+        });
+    });
+</script>
+{% endblock %} 

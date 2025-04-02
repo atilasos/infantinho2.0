@@ -1,0 +1,134 @@
+{% extends "personalizacao/base_personalizacao.html" %}
+
+{% block personalizacao_content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">{% if layout %}Editar{% else %}Novo{% endif %} Layout</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" class="needs-validation" novalidate>
+            {% csrf_token %}
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="{{ form.nome.id_for_label }}" class="form-label">Nome</label>
+                    {{ form.nome }}
+                    {% if form.nome.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.nome.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <label for="{{ form.descricao.id_for_label }}" class="form-label">Descrição</label>
+                    {{ form.descricao }}
+                    {% if form.descricao.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.descricao.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label for="{{ form.tipo.id_for_label }}" class="form-label">Tipo</label>
+                    {{ form.tipo }}
+                    {% if form.tipo.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.tipo.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    <label for="{{ form.largura_maxima.id_for_label }}" class="form-label">Largura Máxima (px)</label>
+                    {{ form.largura_maxima }}
+                    {% if form.largura_maxima.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.largura_maxima.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    <label for="{{ form.espacamento.id_for_label }}" class="form-label">Espaçamento (px)</label>
+                    {{ form.espacamento }}
+                    {% if form.espacamento.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.espacamento.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <div class="form-check form-switch">
+                    {{ form.ativo }}
+                    <label class="form-check-label" for="{{ form.ativo.id_for_label }}">Ativo</label>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'personalizacao:lista_layouts' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Voltar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>Salvar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Preview do Layout</h5>
+    </div>
+    <div class="card-body">
+        <div class="layout-preview" style="max-width: var(--preview-width); margin: 0 auto; padding: var(--preview-spacing);">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Card 1</h5>
+                            <p class="card-text">Exemplo de conteúdo para preview do layout.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Card 2</h5>
+                            <p class="card-text">Exemplo de conteúdo para preview do layout.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Atualizar preview do layout
+    function updateLayoutPreview() {
+        const root = document.documentElement;
+        const preview = document.querySelector('.layout-preview');
+        
+        root.style.setProperty('--preview-width', document.querySelector('#{{ form.largura_maxima.id_for_label }}').value + 'px');
+        root.style.setProperty('--preview-spacing', document.querySelector('#{{ form.espacamento.id_for_label }}').value + 'px');
+    }
+    
+    // Atualizar preview quando os campos mudarem
+    const numberInputs = document.querySelectorAll('input[type="number"]');
+    numberInputs.forEach(input => {
+        input.addEventListener('input', updateLayoutPreview);
+    });
+    
+    // Atualizar preview inicial
+    updateLayoutPreview();
+});
+</script>
+{% endblock %} 

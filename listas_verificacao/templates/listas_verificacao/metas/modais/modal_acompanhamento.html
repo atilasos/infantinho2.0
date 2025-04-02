@@ -1,0 +1,58 @@
+<!-- Modal de Acompanhamento -->
+<div class="modal fade" id="modalAcompanhamento" tabindex="-1" aria-labelledby="modalAcompanhamentoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalAcompanhamentoLabel">Adicionar Acompanhamento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'listas_verificacao:adicionar_acompanhamento' meta.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="percentual" class="form-label">Progresso da Meta</label>
+                        <input type="range" class="form-range" id="percentual" name="percentual" min="0" max="100" step="5" required>
+                        <div class="text-center">
+                            <span id="percentualValue">50%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="observacoes" class="form-label">Observações</label>
+                        <textarea class="form-control" id="observacoes" name="observacoes" rows="3" required></textarea>
+                        <small class="form-text text-muted">
+                            Descreva o progresso atual e os próximos passos.
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="sugestoes" class="form-label">Sugestões</label>
+                        <textarea class="form-control" id="sugestoes" name="sugestoes" rows="2"></textarea>
+                        <small class="form-text text-muted">
+                            Sugestões para melhorar o desenvolvimento da meta.
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="recursos_recomendados" class="form-label">Recursos Recomendados</label>
+                        <textarea class="form-control" id="recursos_recomendados" name="recursos_recomendados" rows="2"></textarea>
+                        <small class="form-text text-muted">
+                            Recursos que podem ajudar no desenvolvimento da meta.
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Adicionar Acompanhamento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Atualiza o valor exibido do percentual quando o slider é movido
+    document.getElementById('percentual').addEventListener('input', function() {
+        document.getElementById('percentualValue').textContent = this.value + '%';
+    });
+</script> 

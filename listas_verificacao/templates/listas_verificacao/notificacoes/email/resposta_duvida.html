@@ -1,0 +1,27 @@
+{% extends "listas_verificacao/notificacoes/email/base_email.html" %}
+
+{% block email_content %}
+<div class="resposta-duvida">
+    <p>Olá {{ notificacao.destinatario.get_full_name|default:notificacao.destinatario.username }},</p>
+    
+    <p>Você recebeu uma resposta para sua dúvida:</p>
+    
+    <div class="resposta-detalhes">
+        <h3>{{ notificacao.titulo }}</h3>
+        <p>{{ notificacao.mensagem }}</p>
+        
+        {% if notificacao.aprendizagem %}
+        <p><strong>Aprendizagem:</strong> {{ notificacao.aprendizagem.codigo }} - {{ notificacao.aprendizagem.descricao }}</p>
+        {% endif %}
+        
+        {% if notificacao.remetente %}
+        <p><strong>Respondido por:</strong> {{ notificacao.remetente.get_full_name|default:notificacao.remetente.username }}</p>
+        {% endif %}
+    </div>
+    
+    <p>Para ver a resposta completa e o contexto da dúvida, clique no link abaixo:</p>
+    {% if notificacao.aprendizagem %}
+    <p><a href="{{ site_url }}{% url 'listas_verificacao:detalhe_aprendizagem' notificacao.aprendizagem.id %}">Ver Detalhes da Aprendizagem</a></p>
+    {% endif %}
+</div>
+{% endblock %} 

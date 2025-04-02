@@ -1,0 +1,174 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+
+{% block title %}Dúvidas{% endblock %}
+
+{% block listas_content %}
+<div class="container mt-4">
+    <!-- Cabeçalho -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Dúvidas</h2>
+        {% if request.user.is_student %}
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCriarDuvida">
+            <i class="fas fa-plus"></i> Nova Dúvida
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3" id="filtroForm">
+                <div class="col-md-3">
+                    <label for="estado" class="form-label">Estado</label>
+                    <select class="form-select" id="estado" name="estado">
+                        <option value="">Todos</option>
+                        {% for estado, nome in estados %}
+                        <option value="{{ estado }}" {% if request.GET.estado == estado %}selected{% endif %}>{{ nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="categoria" class="form-label">Categoria</label>
+                    <select class="form-select" id="categoria" name="categoria">
+                        <option value="">Todas</option>
+                        {% for categoria, nome in categorias %}
+                        <option value="{{ categoria }}" {% if request.GET.categoria == categoria %}selected{% endif %}>{{ nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="prioridade" class="form-label">Prioridade</label>
+                    <select class="form-select" id="prioridade" name="prioridade">
+                        <option value="">Todas</option>
+                        {% for prioridade, nome in prioridades %}
+                        <option value="{{ prioridade }}" {% if request.GET.prioridade == prioridade %}selected{% endif %}>{{ nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Dúvidas -->
+    {% if duvidas %}
+    <div class="row">
+        {% for duvida in duvidas %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge {% if duvida.prioridade == 'urgente' %}bg-danger{% elif duvida.prioridade == 'alta' %}bg-warning{% elif duvida.prioridade == 'media' %}bg-info{% else %}bg-secondary{% endif %} me-2">
+                            {{ duvida.get_prioridade_display }}
+                        </span>
+                        <span class="badge {% if duvida.estado == 'respondida' %}bg-success{% elif duvida.estado == 'em_andamento' %}bg-primary{% elif duvida.estado == 'fechada' %}bg-secondary{% else %}bg-warning{% endif %}">
+                            {{ duvida.get_estado_display }}
+                        </span>
+                    </div>
+                    <small class="text-muted">{{ duvida.data_criacao|date:"d/m/Y H:i" }}</small>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ duvida.titulo }}</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">
+                        {{ duvida.get_categoria_display }} | {{ duvida.aprendizagem.codigo }}
+                    </h6>
+                    <p class="card-text">{{ duvida.descricao|truncatewords:30 }}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">Por {{ duvida.autor.get_full_name }}</small>
+                        <a href="{% url 'listas_verificacao:detalhe_duvida' duvida.id %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-eye"></i> Ver Detalhes
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> Nenhuma dúvida encontrada.
+        {% if request.user.is_student %}
+        <p class="mb-0 mt-2">Que tal criar sua primeira dúvida?</p>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal Criar Dúvida -->
+<div class="modal fade" id="modalCriarDuvida" tabindex="-1" aria-labelledby="modalCriarDuvidaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalCriarDuvidaLabel">Nova Dúvida</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'listas_verificacao:criar_duvida' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <!-- Aprendizagem -->
+                    <div class="mb-3">
+                        <label for="aprendizagem" class="form-label">Aprendizagem Essencial</label>
+                        <select class="form-select" id="aprendizagem" name="aprendizagem" required>
+                            <option value="">Selecione uma aprendizagem</option>
+                            {% for aprendizagem in aprendizagens %}
+                            <option value="{{ aprendizagem.id }}">
+                                {{ aprendizagem.codigo }} - {{ aprendizagem.descricao|truncatechars:100 }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Título -->
+                    <div class="mb-3">
+                        <label for="titulo" class="form-label">Título</label>
+                        <input type="text" class="form-control" id="titulo" name="titulo" required>
+                    </div>
+
+                    <!-- Descrição -->
+                    <div class="mb-3">
+                        <label for="descricao" class="form-label">Descrição</label>
+                        <textarea class="form-control" id="descricao" name="descricao" rows="4" required></textarea>
+                    </div>
+
+                    <!-- Categoria -->
+                    <div class="mb-3">
+                        <label for="categoria" class="form-label">Categoria</label>
+                        <select class="form-select" id="categoria" name="categoria" required>
+                            <option value="">Selecione uma categoria</option>
+                            {% for categoria, nome in categorias %}
+                            <option value="{{ categoria }}">{{ nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Prioridade -->
+                    <div class="mb-3">
+                        <label for="prioridade" class="form-label">Prioridade</label>
+                        <select class="form-select" id="prioridade" name="prioridade" required>
+                            <option value="">Selecione a prioridade</option>
+                            {% for prioridade, nome in prioridades %}
+                            <option value="{{ prioridade }}">{{ nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Criar Dúvida</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+// Atualizar filtros automaticamente
+document.querySelectorAll('#filtroForm select').forEach(select => {
+    select.addEventListener('change', () => {
+        document.getElementById('filtroForm').submit();
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

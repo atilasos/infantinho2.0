@@ -1,0 +1,100 @@
+{% extends 'listas_verificacao/base.html' %}
+{% load static %}
+
+{% block title %}Adicionar Conexão{% endblock %}
+
+{% block listas_content %}
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'listas_verificacao:lista_diarios' %}">Diários</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'listas_verificacao:detalhe_diario' entrada.diario.id %}">{{ entrada.diario.titulo }}</a></li>
+            <li class="breadcrumb-item active">Adicionar Conexão</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <!-- Entrada Original -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ entrada.titulo }}</h5>
+                    <span class="badge bg-info">{{ entrada.get_tipo_display }}</span>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{{ entrada.conteudo }}</p>
+                    <div class="text-muted small">
+                        <i class="fas fa-clock"></i> {{ entrada.data_criacao|date:"d/m/Y H:i" }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulário de Conexão -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Adicionar Conexão com Aprendizagem</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Aprendizagem -->
+                        <div class="mb-3">
+                            <label for="aprendizagem" class="form-label">Aprendizagem Essencial</label>
+                            <select class="form-select" id="aprendizagem" name="aprendizagem" required>
+                                <option value="">Selecione uma aprendizagem</option>
+                                {% for aprendizagem in aprendizagens %}
+                                <option value="{{ aprendizagem.id }}">
+                                    {{ aprendizagem.codigo }} - {{ aprendizagem.descricao|truncatechars:100 }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Escolha a aprendizagem que está relacionada a esta entrada.</div>
+                        </div>
+
+                        <!-- Descrição da Conexão -->
+                        <div class="mb-4">
+                            <label for="descricao" class="form-label">Descrição da Conexão</label>
+                            <textarea class="form-control" id="descricao" name="descricao" rows="3" required></textarea>
+                            <div class="form-text">Explique como esta entrada se relaciona com a aprendizagem selecionada.</div>
+                        </div>
+
+                        <!-- Botões -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'listas_verificacao:detalhe_diario' entrada.diario.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-link"></i> Adicionar Conexão
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {% if entrada.conexoes.exists %}
+            <!-- Conexões Existentes -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Conexões Existentes</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for conexao in entrada.conexoes.all %}
+                        <div class="list-group-item">
+                            <h6 class="mb-1">{{ conexao.aprendizagem.codigo }} - {{ conexao.aprendizagem.descricao|truncatechars:100 }}</h6>
+                            <p class="mb-1">{{ conexao.descricao }}</p>
+                            <small class="text-muted">
+                                <i class="fas fa-clock"></i> {{ conexao.data_criacao|date:"d/m/Y H:i" }}
+                            </small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 
